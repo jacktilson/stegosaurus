@@ -1,32 +1,43 @@
 import argparse, os, numpy, cv2, bitarray
-from itertools import product
+from itertools import product, islice
 
-def encode(img: numpy.ndarray, bits: int, data:bitarray.bitarray):
+def encode(img: numpy.ndarray, bits: int, data: bitarray.bitarray):
 
     # calculate some things
     bitdepth = img.dtype.itemsize * 8  # no. of bits in each channel
-    available = bits * (numpy.product(img.shape))  # no. of available bits (LSB per channel * width * height * channels)
+
+    # no. of available bits (LSB per channel * width * height * channels) - header bit size
+    available = bits * (numpy.product(img.shape)) - (40 * 8)
 
     assert data.length() < available, "Image not big enough for data, either increase image size or bits."
     assert bitdepth > bits, "Image bit depth not big enough for encoding with that many LSBs"
 
     datasize = bitarray.bits2bytes(data.length())  # size of the actual data in bytes
     mask = ((2**bitdepth) - 1) - (2**(bits-1))  # bitmask to erase LSBs on pixels
-    print(mask)
     height, width, depth = img.shape
+    indexes = product(range(width), range(height), range(depth))  # all indexes in the image
 
-    # append the header data to the start of the actual data
     # header: 8 bits (UINT_8): number of lsbs. 32 bits (UINT_32): number bytes encoded)
-    header = bitarray.bitarray()
+
+    header = bitarray.bitarray(endian="little")
+    header.frombytes(bits.to_bytes(1, byteorder="little"))
+    header.frombytes(datasize.to_bytes(4, byteorder="little"))
+
+    # write header
+    writedata(img, islice(indexes, 40), (2**bitdepth) - 2, (header[i:i+1] for i in range(header.length())))
+
+    # write data
+    writedata(img, indexes, mask, (data[i:i+bits] for i in range(0, data.length(), bits)))
+
+    return img
 
 
-    splitdata = (data[i:i+bits] for i in range(0, data.length(), bits))
-    for (x, y, c), d in zip(product(range(width), range(height), range(depth)), splitdata):
+def writedata(img, indexes, mask, data):
+    for (x, y, c), d in zip(indexes, data):
         colour = img.item(x, y, c)
         encoded = (colour & mask) | int.from_bytes(d.tobytes(), byteorder="little")
         print(f"Pixel@({x},{y})(c{c}) Data: {d.to01()}, Colour: {colour}, Encoded: {encoded}")
         img.itemset(x, y, c, encoded)
-    return img
 
 
 def cmd_encode(args):
@@ -34,7 +45,6 @@ def cmd_encode(args):
     img = cv2.imread(args.imgfile)
     data = bitarray.bitarray(endian="little")
     data.frombytes(bytes(args.message, "utf-8"))
-    print(data)
     cv2.imwrite(args.outfile, encode(img, args.bits, data))
 
 
