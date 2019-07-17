@@ -12,6 +12,8 @@ def read_img(img_filepath: str) -> numpy.ndarray:
     assert img_filepath.split(".")[-1].lower() in ["bmp"], "Not an accepted file extension"
     return cv2.imread(img_filepath)
 
+def read_img_binary(bin_img: bytes) -> numpy.ndarray:
+    return cv2.imdecode(bin_img, flags=cv2.IMREAD_ANYDEPTH)
 
 def write_img(img_filepath: str, img: numpy.ndarray):
     cv2.imwrite(img_filepath, img)
@@ -31,15 +33,22 @@ def bytes_to_bitarray(data: bytes) -> bitarray.bitarray:
 ##################
 
 def encode(img: numpy.ndarray, n_lsb: int, data: bytes) -> numpy.ndarray:
-    data = bytes_to_bitarray(data)
+    """
+    Encodes binary data and header onto the least significant bits of colour channels in an image.
+    :param img: The image in numpy array format.
+    :param n_lsb: The number of bits to overwrite in each image channel.
+    :param data: The binary data to encode within the image.
+    :return:
+    """
+    bit_data = bytes_to_bitarray(data)
 
     # no. of available bits (LSB per channel * width * height * channels)
     bits_available = n_lsb * (numpy.product(img.shape))
 
-    if data.length() > bits_available - (40 * 8):  # take off header size
+    if bit_data.length() > bits_available - (40 * 8):  # take off header size
         raise ValueError("Image not big enough for data, either increase image size or bits encoded per channel.")
 
-    byte_length = bitarray.bits2bytes(data.length())  # size of the actual data in bytes
+    byte_length = bitarray.bits2bytes(bit_data.length())  # size of the actual data in bytes
     height, width, channels = img.shape  # image dimensions
     indexes = product(range(width), range(height), range(channels))  # iterator of all indexes in the image
 
@@ -54,20 +63,20 @@ def encode(img: numpy.ndarray, n_lsb: int, data: bytes) -> numpy.ndarray:
     write_to_img(img, islice(indexes, 40), 1, (header[i:i + 1] for i in range(header.length())))
 
     # write data to image
-    write_to_img(img, indexes, n_lsb, (data[i:i + n_lsb] for i in range(0, data.length(), n_lsb)))
+    write_to_img(img, indexes, n_lsb, (bit_data[i:i + n_lsb] for i in range(0, bit_data.length(), n_lsb)))
 
     return img
 
 
-def write_to_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data: Iterable[bitarray.bitarray]):
+def write_to_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, chunked_data: Iterable[bitarray.bitarray]):
     """
-    Writes chunked bits to the image.
-    :param img:
-    :param indexes:
-    :param n_lsb:
-    :param data:
-    :return:
+    Writes chunked bits of data to the least significant bit of an image.
+    :param img: Numpy Array of image data.
+    :param indexes: Indexes and ordering of pixel locations in the image to write the data to.
+    :param n_lsb: The number of bits in the image to be overwritten in each channel
+    :param chunked_data: Smaller bitarrays of length n_lsb or less to be written directly to the image channels.
     """
+
     # bit depth of the image (number of bits in each pixel channel
     bit_depth = img.dtype.itemsize * 8
 
@@ -78,7 +87,7 @@ def write_to_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data:
     # calculate the bit mask to erase least significant bits on each pixel channel so they can be overwritten.
     mask = ((2 ** bit_depth) - 1) - ((2 ** (n_lsb)) - 1)  # e.g. 10111010 AND 11111100 (mask) = 10111000
 
-    for (x, y, c), d in zip(indexes, data):
+    for (x, y, c), d in zip(indexes, chunked_data):
         colour = img.item(x, y, c)
         encoded = (colour & mask) | int.from_bytes(d.tobytes(), byteorder="little")
         print(f"Pixel@({x},{y})(c{c}) Data: {d.to01()}, Colour: {colour}, Encoded: {encoded}")
@@ -86,6 +95,11 @@ def write_to_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data:
 
 
 def decode_img(img: numpy.ndarray) -> bytes:
+    """
+    Decodes data stored in an image.
+    :param img: The image data has been stored in.
+    :return: The data stored in thhe image.
+    """
     height, width, channels = img.shape  # image dimensions
     indexes = product(range(width), range(height), range(channels))  # iterator of all indexes in the image
 
@@ -100,6 +114,13 @@ def decode_img(img: numpy.ndarray) -> bytes:
 
 
 def read_from_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int) -> bitarray:
+    """
+    Reads the least significant bits of image channels and returns them as a continuous bitarray
+    :param img: The image to extract from.
+    :param indexes: The indexes of channels in the image to extract from.
+    :param n_lsb: The number of bits to extract from each channel
+    :return: Continuous bitarray of extracted bits
+    """
     data = bitarray.bitarray(endian="little")
     bytes_size = bitarray.bits2bytes(n_lsb)
 
