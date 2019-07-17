@@ -4,8 +4,7 @@ import steg
 
 def cmd_encode(args):
     img = steg.read_img(args.imgfile)
-    data = steg.string_to_bitarray(args.msg)
-    steg.write_img(args.outfile, steg.encode(img, args.n_bits, data))
+    steg.write_img(args.outfile, steg.encode(img, args.n_bits, bytes(args.msg, "utf-8")))
 
 
 def cmd_decode(args):
