@@ -18,16 +18,21 @@ def write_img(img_filepath: str, img: numpy.ndarray):
 
 
 def string_to_bitarray(text: str) -> bitarray.bitarray:
-    data = bitarray.bitarray(endian="little")
-    data.frombytes(bytes(text, "utf-8"))
-    return data
+    return bytes_to_bitarray(bytes(text, "utf-8"))
+
+
+def bytes_to_bitarray(data: bytes) -> bitarray.bitarray:
+    bits = bitarray.bitarray(endian="little")
+    bits.frombytes(data)
+    return bits
 
 ##################
 # main functions #
 ##################
 
+def encode(img: numpy.ndarray, n_lsb: int, data: bytes) -> numpy.ndarray:
+    data = bytes_to_bitarray(data)
 
-def encode(img: numpy.ndarray, n_lsb: int, data: bitarray.bitarray) -> numpy.ndarray:
     # no. of available bits (LSB per channel * width * height * channels)
     bits_available = n_lsb * (numpy.product(img.shape))
 
