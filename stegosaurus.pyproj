@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{f8239cf6-2ff7-471a-821b-b69aae2ea61b}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>stegosaurus-app\app.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="debug-backend\main.py" />
+    <Compile Include="debug-backend\steg.py" />
+    <Compile Include="stegosaurus-app\app.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="debug-backend\images\ex.bmp" />
+    <Content Include="debug-backend\images\example.bmp" />
+    <Content Include="stegosaurus-app\requirements.txt" />
+    <Content Include="stegosaurus-app\static\css\bootstrap.css" />
+    <Content Include="stegosaurus-app\static\css\bootstrap.min.css" />
+    <Content Include="stegosaurus-app\static\css\style.css" />
+    <Content Include="stegosaurus-app\static\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="stegosaurus-app\static\img\steggy.png" />
+    <Content Include="stegosaurus-app\static\scripts\bootstrap.js" />
+    <Content Include="stegosaurus-app\static\scripts\bootstrap.min.js" />
+    <Content Include="stegosaurus-app\static\scripts\jquery-1.10.2.intellisense.js" />
+    <Content Include="stegosaurus-app\static\scripts\jquery-1.10.2.js" />
+    <Content Include="stegosaurus-app\static\scripts\jquery-1.10.2.min.js" />
+    <Content Include="stegosaurus-app\static\scripts\jquery.validate-vsdoc.js" />
+    <Content Include="stegosaurus-app\static\scripts\jquery.validate.js" />
+    <Content Include="stegosaurus-app\static\scripts\jquery.validate.min.js" />
+    <Content Include="stegosaurus-app\static\scripts\jquery.validate.unobtrusive.js" />
+    <Content Include="stegosaurus-app\static\scripts\jquery.validate.unobtrusive.min.js" />
+    <Content Include="stegosaurus-app\static\scripts\modernizr-2.6.2.js" />
+    <Content Include="stegosaurus-app\static\scripts\respond.js" />
+    <Content Include="stegosaurus-app\static\scripts\respond.min.js" />
+    <Content Include="stegosaurus-app\static\scripts\_references.js" />
+    <Content Include="stegosaurus-app\templates\index.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="debug-backend" />
+    <Folder Include="debug-backend\images" />
+    <Folder Include="stegosaurus-app" />
+    <Folder Include="stegosaurus-app\static\" />
+    <Folder Include="stegosaurus-app\static\css" />
+    <Folder Include="stegosaurus-app\static\fonts" />
+    <Folder Include="stegosaurus-app\static\img" />
+    <Folder Include="stegosaurus-app\static\scripts" />
+    <Folder Include="stegosaurus-app\templates" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>
