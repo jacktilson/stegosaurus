@@ -9,11 +9,13 @@ def cmd_encode(args):
 
 
 def cmd_decode(args):
-    pass
+    img = steg.read_img(args.imgfile)
+    data = steg.decode_img(img)
+    with open(args.outfile, "wb+") as file:
+        file.write(data)
 
 
 if __name__ == "__main__":
-
     # Create CLI arg parser
     parser = argparse.ArgumentParser(description="Utility for LSB encoding of a message in an image")
 
@@ -31,7 +33,7 @@ if __name__ == "__main__":
     # Parser for decode command
     decodeParser = subs.add_parser("decode", description="Decode a message stored in an image file")
     decodeParser.add_argument("imgfile", action="store", type=str, help="Image file to extract from")
-    decodeParser.add_argument("outfile", action="store", type=str, help="Image file to ")
+    decodeParser.add_argument("outfile", action="store", type=str, help="File to write data to")
     decodeParser.set_defaults(func=cmd_decode)
 
     args = parser.parse_args()

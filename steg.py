@@ -76,6 +76,41 @@ def write_to_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data:
     for (x, y, c), d in zip(indexes, data):
         colour = img.item(x, y, c)
         encoded = (colour & mask) | int.from_bytes(d.tobytes(), byteorder="little")
-        print(bin(mask))
         print(f"Pixel@({x},{y})(c{c}) Data: {d.to01()}, Colour: {colour}, Encoded: {encoded}")
         img.itemset(x, y, c, encoded)
+
+
+def decode_img(img: numpy.ndarray) -> bytes:
+    height, width, channels = img.shape  # image dimensions
+    indexes = product(range(width), range(height), range(channels))  # iterator of all indexes in the image
+
+    # read header data
+    header = read_from_img(img, islice(indexes, 40), 1)
+    n_lsb = int.from_bytes(header[:8].tobytes(), byteorder="little")  # first 8 bits
+    byte_size = int.from_bytes(header[8:].tobytes(), byteorder="little")  # last 32 bits
+
+    # read actual data
+    data = read_from_img(img, islice(indexes, (byte_size * 8) // n_lsb), n_lsb)
+    return data.tobytes()
+
+
+def read_from_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int) -> bitarray:
+    data = bitarray.bitarray(endian="little")
+    bytes_size = bitarray.bits2bytes(n_lsb)
+
+    # bit depth of the image (number of bits in each pixel channel
+    bit_depth = img.dtype.itemsize * 8
+
+    # check each channel has enough bit depth to accommodate using that many bits to encode with.
+    if bit_depth < n_lsb:
+        raise ValueError("Image bit depth not big enough for decoding that many bits per channel")
+
+    # calculate the bit mask to get only the least significant bits on each pixel channel..
+    mask = ((2 ** n_lsb) - 1)  # e.g. 10111010 AND 00000011 (mask) = 00000010
+
+    for (x, y, c) in indexes:
+        chunk = bitarray.bitarray(endian="little")
+        chunk.frombytes((img.item(x, y, c) & mask).to_bytes(bytes_size, byteorder="little"))
+        data += chunk[:n_lsb]
+
+    return data
