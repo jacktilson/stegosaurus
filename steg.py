@@ -1,77 +1,81 @@
-import argparse, os, numpy, cv2, bitarray
+import os, numpy, cv2, bitarray
 from itertools import product, islice
+from typing import Iterable, Tuple
 
-def encode(img: numpy.ndarray, bits: int, data: bitarray.bitarray):
+##################
+# util functions #
+##################
 
-    # calculate some things
-    bitdepth = img.dtype.itemsize * 8  # no. of bits in each channel
 
-    # no. of available bits (LSB per channel * width * height * channels) - header bit size
-    available = bits * (numpy.product(img.shape)) - (40 * 8)
+def read_img(img_filepath: str) -> numpy.ndarray:
+    assert os.path.isfile(img_filepath), "Not a valid path"
+    assert img_filepath.split(".")[-1].lower() in ["bmp"], "Not an accepted file extension"
+    return cv2.imread(img_filepath)
 
-    assert data.length() < available, "Image not big enough for data, either increase image size or bits."
-    assert bitdepth > bits, "Image bit depth not big enough for encoding with that many LSBs"
 
-    datasize = bitarray.bits2bytes(data.length())  # size of the actual data in bytes
-    mask = ((2**bitdepth) - 1) - (2**(bits-1))  # bitmask to erase LSBs on pixels
-    height, width, depth = img.shape
-    indexes = product(range(width), range(height), range(depth))  # all indexes in the image
+def write_img(img_filepath: str, img: numpy.ndarray):
+    cv2.imwrite(img_filepath, img)
 
-    # header: 8 bits (UINT_8): number of lsbs. 32 bits (UINT_32): number bytes encoded)
 
+def string_to_bitarray(text: str) -> bitarray.bitarray:
+    data = bitarray.bitarray(endian="little")
+    data.frombytes(bytes(text, "utf-8"))
+    return data
+
+##################
+# main functions #
+##################
+
+
+def encode(img: numpy.ndarray, n_lsb: int, data: bitarray.bitarray) -> numpy.ndarray:
+    # no. of available bits (LSB per channel * width * height * channels)
+    bits_available = n_lsb * (numpy.product(img.shape))
+
+    if data.length() > bits_available - (40 * 8):  # take off header size
+        raise ValueError("Image not big enough for data, either increase image size or bits encoded per channel.")
+
+    byte_length = bitarray.bits2bytes(data.length())  # size of the actual data in bytes
+    height, width, channels = img.shape  # image dimensions
+    indexes = product(range(width), range(height), range(channels))  # iterator of all indexes in the image
+
+    # create header
+    # First 8 bits: number of bits being encoded in each channel.
+    # Next 32 bits: number bytes of data being encoded)
     header = bitarray.bitarray(endian="little")
-    header.frombytes(bits.to_bytes(1, byteorder="little"))
-    header.frombytes(datasize.to_bytes(4, byteorder="little"))
+    header.frombytes(n_lsb.to_bytes(1, byteorder="little"))
+    header.frombytes(byte_length.to_bytes(4, byteorder="little"))
 
-    # write header
-    writedata(img, islice(indexes, 40), (2**bitdepth) - 2, (header[i:i+1] for i in range(header.length())))
+    # write header to image
+    write_to_img(img, islice(indexes, 40), 1, (header[i:i + 1] for i in range(header.length())))
 
-    # write data
-    writedata(img, indexes, mask, (data[i:i+bits] for i in range(0, data.length(), bits)))
+    # write data to image
+    write_to_img(img, indexes, n_lsb, (data[i:i + n_lsb] for i in range(0, data.length(), n_lsb)))
 
     return img
 
 
-def writedata(img, indexes, mask, data):
+def write_to_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data: Iterable[bitarray.bitarray]):
+    """
+    Writes chunked bits to the image.
+    :param img:
+    :param indexes:
+    :param n_lsb:
+    :param data:
+    :return:
+    """
+    # bit depth of the image (number of bits in each pixel channel
+    bit_depth = img.dtype.itemsize * 8
+
+    # check each channel has enough bit depth to accommodate using that many bits to encode with.
+    if bit_depth < n_lsb:
+        raise ValueError("Image bit depth not big enough for encoding with that many bits per channel")
+
+    # calculate the bit mask to erase least significant bits on each pixel channel so they can be overwritten.
+    mask = ((2 ** bit_depth) - 1) - ((2 ** (n_lsb)) - 1)  # e.g. 10111010 AND 11111100 (mask) = 10111000
+
     for (x, y, c), d in zip(indexes, data):
         colour = img.item(x, y, c)
         encoded = (colour & mask) | int.from_bytes(d.tobytes(), byteorder="little")
+        print(bin(mask))
         print(f"Pixel@({x},{y})(c{c}) Data: {d.to01()}, Colour: {colour}, Encoded: {encoded}")
         img.itemset(x, y, c, encoded)
-
-
-def cmd_encode(args):
-    assert os.path.isfile(args.imgfile), "Input file doesn't exist"
-    img = cv2.imread(args.imgfile)
-    data = bitarray.bitarray(endian="little")
-    data.frombytes(bytes(args.message, "utf-8"))
-    cv2.imwrite(args.outfile, encode(img, args.bits, data))
-
-
-def cmd_decode(args):
-    assert os.path.isfile(args.imgfile), "Input file doesnt exist"
-
-
-if __name__ == "__main__":
-
-    # Create CLI arg parser
-    parser = argparse.ArgumentParser(description="Utility for LSB encoding of a message in an image")
-
-    # Sub-parser for encode/decode
-    subs = parser.add_subparsers(title="Actions")
-
-    # Parser for encode cmd
-    encodeParser = subs.add_parser("encode", description="Encode a message in an image file")
-    encodeParser.add_argument("-imgfile", required=True, action="store", type=str, help="Image file to encode")
-    encodeParser.add_argument("-message", required=True, action="store", type=str, help="Message to hide")
-    encodeParser.add_argument("-outfile", required=True, action="store", type=str, help="Outfile name.")
-    encodeParser.add_argument("-bits", action="store", type=int, default=1, help="Number of bits to encode")
-    encodeParser.set_defaults(func=cmd_encode)
-
-    # Parser for decode command
-    decodeParser = subs.add_parser("decode", description="Decode a message stored in an image file")
-    decodeParser.add_argument("-imgfile", required=True, action="store", help="Image file to extract data from")
-    decodeParser.set_defaults(func=cmd_decode)
-
-    args = parser.parse_args()
-    args.func(args)
