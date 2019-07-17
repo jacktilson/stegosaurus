@@ -67,14 +67,15 @@ def write_to_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data:
     bit_depth = img.dtype.itemsize * 8
 
     # check each channel has enough bit depth to accommodate using that many bits to encode with.
-    if bit_depth > n_lsb:
+    if bit_depth < n_lsb:
         raise ValueError("Image bit depth not big enough for encoding with that many bits per channel")
 
     # calculate the bit mask to erase least significant bits on each pixel channel so they can be overwritten.
-    mask = ((2 ** bit_depth) - 1) - (2 ** (n_lsb - 1))  # e.g. 10111010 AND 11111100 (mask) = 10111000
+    mask = ((2 ** bit_depth) - 1) - ((2 ** (n_lsb)) - 1)  # e.g. 10111010 AND 11111100 (mask) = 10111000
 
     for (x, y, c), d in zip(indexes, data):
         colour = img.item(x, y, c)
         encoded = (colour & mask) | int.from_bytes(d.tobytes(), byteorder="little")
+        print(bin(mask))
         print(f"Pixel@({x},{y})(c{c}) Data: {d.to01()}, Colour: {colour}, Encoded: {encoded}")
         img.itemset(x, y, c, encoded)
