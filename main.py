@@ -5,7 +5,7 @@ import steg
 def cmd_encode(args):
     img = steg.read_img(args.imgfile)
     data = steg.string_to_bitarray(args.msg)
-    steg.write_img(args.outfile, steg.encode(img, args.bits, data))
+    steg.write_img(args.outfile, steg.encode(img, args.n_bits, data))
 
 
 def cmd_decode(args):
@@ -22,16 +22,16 @@ if __name__ == "__main__":
 
     # Parser for encode cmd
     encodeParser = subs.add_parser("encode", description="Encode a message in an image file")
-    encodeParser.add_argument("imgfile", required=True, action="store", type=str, help="Image file to encode")
-    encodeParser.add_argument("msg", required=True, action="store", type=str, help="Message to hide")
-    encodeParser.add_argument("outfile", required=True, action="store", type=str, help="Outfile name.")
+    encodeParser.add_argument("imgfile", action="store", type=str, help="Image file to encode")
+    encodeParser.add_argument("msg", action="store", type=str, help="Message to hide")
+    encodeParser.add_argument("outfile", action="store", type=str, help="Outfile name.")
     encodeParser.add_argument("n_bits", action="store", type=int, default=1, help="Number of bits to encode")
     encodeParser.set_defaults(func=cmd_encode)
 
     # Parser for decode command
     decodeParser = subs.add_parser("decode", description="Decode a message stored in an image file")
-    decodeParser.add_argument("imgfile", required=True, action="store", type=str, help="Image file to extract from")
-    decodeParser.add_argument("outfile", required=True, action="store", type=str, help="Image file to ")
+    decodeParser.add_argument("imgfile", action="store", type=str, help="Image file to extract from")
+    decodeParser.add_argument("outfile", action="store", type=str, help="Image file to ")
     decodeParser.set_defaults(func=cmd_decode)
 
     args = parser.parse_args()
