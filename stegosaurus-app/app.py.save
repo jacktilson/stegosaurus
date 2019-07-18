@@ -1,4 +1,3 @@
-
 """
 This script runs the application using a development server.
 It contains the definition of routes and views for the application.
@@ -17,4 +16,7 @@ def home():
     return render_template('index.html')
 
 if __name__ == '__main__':
+    import os
+    HOST = os.environ.get('SERVER_HOST', 'localhost')
+
     app.run("0.0.0.0", port=443, ssl_context='adhoc')
