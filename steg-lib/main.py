@@ -4,7 +4,8 @@ import steg
 
 def cmd_encode_string(args):
     img = steg.read_img(args.imgfile)
-    steg.write_img(args.outfile, steg.encode(img, args.n_bits, bytes(args.msg, "utf-8")))
+    steg.write_img(args.outfile, steg.encode(img, bytes(args.msg, "utf-8"), n_lsb=args.n_bits, filename="file", extension="txt"))
+
 
 def cmd_encode_file(args):
     img = steg.read_img(args.imgfile)
@@ -12,7 +13,7 @@ def cmd_encode_file(args):
     with open(args.encfile, "rb") as file:
         data = file.read()
 
-    steg.write_img(args.outfile, steg.encode(img, args.n_bits, data))
+    steg.write_img(args.outfile, steg.encode(img, data, n_lsb=args.n_bits, filename="file", extension="txt"))
 
 
 def cmd_decode(args):
