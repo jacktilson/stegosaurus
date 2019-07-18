@@ -141,9 +141,16 @@ def decode_img(img: numpy.ndarray) -> bytes:
     indexes = product(range(width), range(height), range(channels))  # iterator of all indexes in the image
 
     # read header data
-    header = read_from_img(img, islice(indexes, 40), 1)
-    n_lsb = int.from_bytes(header[:8].tobytes(), byteorder="little")  # first 8 bits
-    byte_size = int.from_bytes(header[8:].tobytes(), byteorder="little")  # last 32 bits
+    flags = int.from_bytes(read_from_img(img, islice(indexes, 8), 1), byteorder="little")
+    print(flags)
+    n_lsb = 1
+    if flags & LSB:
+        n_lsb = int.from_bytes(read_from_img(img, islice(indexes, 8), 1), byteorder="little")
+        print("LSB =", n_lsb),
+
+    if flags & EXT:
+        ext_len = int.from_bytes(read_from_img(img, islice(indexes, 8), n_lsb), byteorder="little")
+        print(ext_len)
 
     # read actual data
     data = read_from_img(img, islice(indexes, (byte_size * 8) // n_lsb), n_lsb)
