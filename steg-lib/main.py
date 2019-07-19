@@ -21,7 +21,7 @@ def cmd_encode_file(args):
     if args.enc_filename:
         flags["filename"] = path.stem
     if args.enc_extension:
-        flags["extension"] = path.suffix
+        flags["extension"] = path.suffix[1:]
 
     steg.write_img(args.outfile, steg.encode(img, data, **flags))
 
@@ -31,7 +31,7 @@ def cmd_decode(args):
     data, meta = steg.decode_img(img)
     filename = meta["filename"] if "filename" in meta else "output"
     ext = f".{meta['extension']}" if "extension" in meta else ""
-    with open(f"Output/decoded/{filename}{ext}", "wb+") as file:
+    with open(f"{args.o}{filename}{ext}", "wb+") as file:
         file.write(data)
 
 
@@ -64,7 +64,9 @@ if __name__ == "__main__":
 
     # Parser for decode command
     decode_parser = subs.add_parser("decode", description="Decode a message stored in an image file.")
-    decode_parser.add_argument("imgfile", action="store", type=str, help="Image to decode from")
+    decode_parser.add_argument("imgfile", action="store", type=str, help="Image to decode")
+    decode_parser.add_argument("-o", action="store", type=str, default="./Output/decoded/",
+                               help="Optional output directory")
     decode_parser.set_defaults(func=cmd_decode)
 
     args = parser.parse_args()
