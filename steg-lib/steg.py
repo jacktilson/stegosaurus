@@ -67,7 +67,7 @@ def encode(img: numpy.ndarray, data: bytes, **flags) -> numpy.ndarray:
         raise ValueError("Image not big enough for data, either increase image size or bits encoded per channel.")
 
     byte_length = bitarray.bits2bytes(bit_data.length())  # size of the actual data in bytes
-    height, width, channels = img.shape  # image dimensions
+    width, height, channels = img.shape  # image dimensions
     indexes = product(range(width), range(height), range(channels))  # iterator of all indexes in the image
 
     # create header
@@ -127,7 +127,7 @@ def write_to_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data:
     for (x, y, c), d in zip(indexes, chunked_data):
         colour = img.item(x, y, c)
         encoded = (colour & mask) | int.from_bytes(d.tobytes(), byteorder="little")
-        print(f"Pixel@({x},{y})(c{c}) Data: {d.to01()}, Colour: {colour}, Encoded: {encoded}")
+        # print(f"Pixel@({x},{y})(c{c}) Data: {d.to01()}, Colour: {colour}, Encoded: {encoded}")
         img.itemset(x, y, c, encoded)
 
 
@@ -137,7 +137,7 @@ def decode_img(img: numpy.ndarray) -> Tuple[bytes, Dict[str, str]]:
     :param img: The image data has been stored in.
     :return: The data stored in thhe image.
     """
-    height, width, channels = img.shape  # image dimensions
+    width, height, channels = img.shape  # image dimensions
     indexes = product(range(width), range(height), range(channels))  # iterator of all indexes in the image
 
     meta = dict()  # meta object to store header data

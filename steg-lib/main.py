@@ -30,8 +30,8 @@ def cmd_decode(args):
     img = steg.read_img(args.imgfile)
     data, meta = steg.decode_img(img)
     filename = meta["filename"] if "filename" in meta else "output"
-    ext = meta["extension"] if "extension" in meta else "txt"
-    with open(f"Output/decoded/{filename}.{ext}", "wb+") as file:
+    ext = f".{meta['extension']}" if "extension" in meta else ""
+    with open(f"Output/decoded/{filename}{ext}", "wb+") as file:
         file.write(data)
 
 
