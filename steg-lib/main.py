@@ -21,7 +21,7 @@ def cmd_encode_file(args):
     if args.enc_filename:
         flags["filename"] = path.stem
     if args.enc_extension:
-        flags["extension"] = path.suffix
+        flags["extension"] = path.suffix[1:]
 
     steg.write_img(args.outfile, steg.encode(img, data, **flags))
 
