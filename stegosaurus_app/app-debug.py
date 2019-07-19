@@ -14,7 +14,7 @@ wsgi_app = app.wsgi_app
 @app.route('/')
 def home():
     """Renders the temp splash page."""
-    return render_template('index.html')
+    return render_template('old_index.html')
 
 
 if __name__ == '__main__':
