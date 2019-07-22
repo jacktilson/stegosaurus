@@ -1,3 +1,10 @@
+
+################################################################
+# This script is triggered by the Apache2 stegapp virtual host #
+# in order to launch the flask application and relevant routes #
+################################################################
+
+
 #!/usr/bin/python
 import sys
 import logging
