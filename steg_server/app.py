@@ -1,17 +1,21 @@
 """  This file triggers the Flask instance, and loads all of the routes types. """
 
+#########################
+# Create Flask Instance #
+#########################
+
 from flask import Flask
 app = Flask(__name__)
 
-##################
-# Core App Pages #
-##################
+#############################
+# Load Core App Page Routes #
+#############################
 
 from core_routes import *  
 
-####################
-# HTTP Error Pages #
-####################
+##########################
+# HTTP Error Page Routes #
+##########################
 
 from error_routes import *
 

@@ -1,16 +1,26 @@
 """ This file contains the flask routes for the main functionality of the app """
 
+#####################
+# Load Dependencies #
+#####################
+
 from app import app
 from flask import request, send_file, render_template
 from io import BytesIO
 
-# Define the homepage
+##################
+# Homepage Route #
+##################
+
 @app.route('/')
 def home():
     """Renders the temp splash page."""
     return render_template('index.html')
   
-# Define the file upload test page
+##########################
+# File Upload Test Route #
+##########################
+
 @app.route('/filetest', methods = ['POST'])
 def filetest():
   if request.method == 'POST':
