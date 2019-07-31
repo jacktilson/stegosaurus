@@ -1,4 +1,12 @@
 <template lang="pug">
-  div
-    h1 This is the encode page
+    .container
+        h1 This is the encode page
+        form
+
+
 </template>
+<script>
+export default {
+  name: "Encode"
+};
+</script>
