@@ -22,5 +22,17 @@ body {
 .card {
   background: rgba(31, 31, 31, 0.8);
 }
-
+.btn {
+  border: 1px solid rgb(63, 127, 63);
+  background-color: rgb(63, 127, 63);
+  border-radius: 5px;
+  padding: 14px 28px;
+  font-size: 16px;
+  cursor: pointer;
+  &:hover {
+    transition: 256ms;
+    background-color: rgb(31, 95, 31);
+    border-color: rgb(31, 95, 31);
+  }
+}
 </style>
