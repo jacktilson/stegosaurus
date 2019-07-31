@@ -1,7 +1,11 @@
 <template lang="pug">
     .container
-        h1 This is the encode page
-        form
+        .row
+            .col-12.card.mt-5
+                p.card-body Encode some data
+
+
+                form
 
 
 </template>
@@ -10,3 +14,9 @@ export default {
   name: "Encode"
 };
 </script>
+<style lang="scss">
+    .container{
+        border: 1px solid red;
+    }
+
+</style>
