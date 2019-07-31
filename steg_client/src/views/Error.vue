@@ -11,7 +11,6 @@
 
 </template>
 <style lang="scss">
-
 .btn {
   border: 1px solid rgb(63, 127, 63);
   background-color: rgb(63, 127, 63);
@@ -22,7 +21,7 @@
   &:hover {
     transition: 256ms;
     background-color: rgb(31, 95, 31);
-      border-color: rgb(31, 95, 31);
+    border-color: rgb(31, 95, 31);
   }
 }
 </style>
