@@ -31,8 +31,15 @@
                     b-col(lg="6")
                       b-card-img(:src="imgFileDataString").rounded-0
                     b-col(lg="6")
-                      b-card-body(title="Image Preview")
-                        b-card-text To be filled with info about image (width, height, channels, bit depth, estimated space available)
+                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
+                        b-row
+                          b-col(md="auto")
+                            b-card-text Dimensions: {{imgMeta.width}} x {{imgMeta.height}}
+                          b-col(md="auto")
+                            b-card-text Channels: {{imgMeta.channels}}
+                          b-col(md="auto")
+                            b-card-text Bit Depth: {{imgMeta.bitDepth}}
+                        b-card-text Estimated Space {{estimatedSpace}} Bytes
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
@@ -58,11 +65,17 @@
                     label-cols-lg="2"
                     description="The number of bits to overwrite per channel of the image"
                   )
-                    b-form-input(id="nBitsInput" type="range" min="1" max="8" v-model="nBits")
+                    b-form-input(
+                      id="nBitsInput"
+                      type="range"
+                      min="1"
+                      :max="imgMeta.bitDepth" 
+                      v-model="nBits"
+                      v-on:change="updateSpaceAvailable")
                   b-form-group
-                    b-form-checkbox(v-model="encodeFilename") Encode filename
+                    b-form-checkbox(v-model="encodeFilename" v-on:change="updateSpaceAvailable") Encode filename
                   b-form-group
-                    b-form-checkbox(v-model="encodeFileExt") Encode file extension
+                    b-form-checkbox(v-model="encodeFileExt" v-on:change="updateSpaceAvailable") Encode file extension
               b-button(v-on:click="submit" :disabled='!enableSubmit') Encode
           b-collapse(v-model="showWaiting")
             b-card-text Waiting for a result...
@@ -71,6 +84,7 @@
 </template>
 <script>
 import axios from "axios";
+import path from "path";
 
 let INVALID = 0;
 let VALID = 1;
@@ -86,8 +100,16 @@ export default {
       dataFile: null,
       imgFile: null,
       imgFileDataString: "",
+      imgMeta: {
+        width: 1024,
+        height: 1920,
+        channels: 3,
+        bitDepth: 8
+      },
       encodeFilename: false,
-      encodeFileExt: false
+      encodeFileExt: false,
+      transactionID: "",
+      estimatedSpace: 0
     };
   },
   computed: {
@@ -149,7 +171,7 @@ export default {
           this.formState = RESULT;
           alert(response);
         })
-        .catch(function(error) {
+        .catch(error => {
           alert(error);
         });
     },
@@ -164,10 +186,63 @@ export default {
           this.imgFileDataString = event.target.result;
         };
         reader.readAsDataURL(input.files[0]); // Start the reader, calls above function on completion
+
+        //also trigger upload of file to server
+        let formData = new FormData();
+        formData.append("imgFile", this.imgFile);
+        axios
+          .post("/encode/upload", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+          .then(response => {
+            this.transactionID = response.data.transactionID;
+            this.imgMeta.width = response.data.width;
+            this.imgMeta.height = response.data.height;
+            this.imgMeta.channels = response.data.channels;
+            this.imgMeta.bitDepth = response.data.bitDepth;
+          })
+          .catch(error => {
+            alert(error);
+          });
       }
     },
 
-    formChanged(event) {}
+    updateSpaceAvailable() {
+      var params = { transactionID: this.transactionID };
+      if (this.dataFile) {
+        var ext = path.extname(this.dataFile.name);
+        var filename = path.basename(this.dataFile, ext);
+        if (this.encodeFilename) {
+          params.filename = filename;
+        }
+        if (this.encodeFileExt) {
+          params.ext = ext;
+        }
+      }
+      if (this.nBits > 1) {
+        params.nBits = this.nBits;
+      }
+
+      axios.get("/encode/space", { params })
+      .then(response => {
+        alert(response);
+      })
+      .catch(error => {
+        alert(error);
+      });
+    },
+
+    validateForm() {
+      if (
+        this.validInputImgFile &&
+        this.dataFile &&
+        this.nBits <= this.imgMeta.bitDepth
+      ) {
+        this.formState = VALID;
+      }
+    }
   }
 };
 </script>
