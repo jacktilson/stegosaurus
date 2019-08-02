@@ -35,16 +35,43 @@ def bytes_to_bitarray(data: bytes) -> bitarray.bitarray:
     bits.frombytes(data)
     return bits
 
+def get_img_meta(img: numpy.ndarray) -> Tuple:
+    return (*img.shape, img.dtype.itemsize)
+
+def space_available(img: numpy.ndarray, **flags) -> int:
+    width, height, channels, bitdepth = get_img_meta(img)
+    header_size = 8 # encoded at 1LSB. Measured in bits.
+    subheader_size = 8 # Measured in bits
+    n_lsb = flags["n_lsb"] if "n_lsb" in flags else 1
+    if n_lsb > 1:
+        header_size += 8
+    if "extension" in flags:
+        subheader_size += 8 + len(bytes(flags["extension"])) * 8
+    if "filename" in flags:
+        subheader_size += 8 + len(bytes(flags["filename"])) * 8
+    
+    return (((width * height * channels) - header_size) * (bitdepth - n_lsb)) - subheader_size
+    
 
 ##################
 # main functions #
 ##################
 
+
+'''
+Typical Flags Object:
+{
+    filename,
+    filextension,
+    n_lsb
+}
+
+'''
+
 def encode(img: numpy.ndarray, data: bytes, **flags) -> numpy.ndarray:
     """
     Encodes binary data and header onto the least significant bits of colour channels in an image.
     :param img: The image in numpy array format.
-    :param n_lsb: The number of bits to overwrite in each image channel.
     :param data: The binary data to encode within the image.
     :return:
     """
@@ -61,9 +88,9 @@ def encode(img: numpy.ndarray, data: bytes, **flags) -> numpy.ndarray:
     n_lsb = flags["n_lsb"] if flagbyte & LSB else 1
 
     # no. of available bits (LSB per channel * width * height * channels)
-    bits_available = n_lsb * (numpy.product(img.shape))
+    bits_available = space_available(img, **flags)
 
-    if bit_data.length() > bits_available - (40 * 8):  # take off header size
+    if bit_data.length() > bits_available:
         raise ValueError("Image not big enough for data, either increase image size or bits encoded per channel.")
 
     byte_length = bitarray.bits2bytes(bit_data.length())  # size of the actual data in bytes
