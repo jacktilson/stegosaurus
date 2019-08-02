@@ -38,7 +38,7 @@
                                 b-col(sm="2")
                                     label(for="nBitsInput") Bits: {{nBits}}
                                 b-col(sm="10")
-                                    b-form-input(id="nBitsInput" type="range" min="0" max="8" v-model="nBits")
+                                    b-form-input(id="nBitsInput" type="range" min="1" max="8" v-model="nBits")
                         b-form-group
                             b-form-checkbox(
                                 v-model="encodeFilename"                                
@@ -72,8 +72,8 @@ export default {
       dataFile: null,
       imgFile: null,
       imgFileDataString: "",
-      encodeFilename: false,
-      encodeFileExt: false
+      encodeFilename: true,
+      encodeFileExt: true
     };
   },
   methods: {
