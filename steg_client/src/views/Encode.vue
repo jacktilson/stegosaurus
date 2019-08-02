@@ -1,55 +1,4 @@
 <template lang="pug">
-<<<<<<< HEAD
-    b-container
-        b-row
-            b-col(sm="12")
-                b-card.mt-3
-                    b-card-title Encode Data
-                    b-card-text Encode some data within a bitmap image file. The algorithm works by changing the colour
-                        |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
-                        | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
-                        | channel with the data to be hidden, changing the actual value by the smallest amount.
-                    form
-                        b-form-group
-                            b-form-file(
-                              v-model="imgFile"
-                              :state="Boolean(imgFile)" 
-                              placeholder="Choose a bitmap file to encode to..."
-                              drop-placeholder="Drop a bitmap file here to encode to..."
-                              v-on:change="imgFileChange($event)")
-
-                        b-collapse(id="imgFilePreviewCollapse" v-model="imgFile")
-                          b-card(no-body).overflow-hidden.mb-3
-                            b-row(no-gutters)
-                              b-col(lg="6")
-                                b-card-img(:src="imgFileDataString").rounded-0
-                              b-col(lg="6")
-                                b-card-body(title="Image Preview")
-                                  b-card-text To be filled with info about image (width, height, channels, bit depth, estimated space available)
-                        b-form-group
-                            b-form-file(
-                              v-model="dataFile"
-                              :state="Boolean(dataFile)"
-                              placeholder="Choose file to encode on to image..."
-                              drop-placeholder="Drop file here to encode onto image...")
-                        b-card-text This sets the number of bits to be overwritten per image channel. Higher values start
-                            |  to distort the image but allow more data to be encoded within the file.
-                        b-form-group
-                            b-row
-                                b-col(sm="2")
-                                    label(for="nBitsInput") Bits: {{nBits}}
-                                b-col(sm="10")
-                                    b-form-input(id="nBitsInput" type="range" min="1" max="8" v-model="nBits")
-                        b-form-group
-                            b-form-checkbox(
-                                v-model="encodeFilename"                                
-                            ) Encode filename
-                        b-form-group
-                            b-form-checkbox(
-                                v-model="encodeFileExt"                                
-                            ) Encode file extension
-                        b-button(v-on:click="submit") Encode
-=======
   b-container
     b-row
       b-col(sm="12")
@@ -82,8 +31,15 @@
                     b-col(lg="6")
                       b-card-img(:src="imgFileDataString").rounded-0
                     b-col(lg="6")
-                      b-card-body(title="Image Preview")
-                        b-card-text To be filled with info about image (width, height, channels, bit depth, estimated space available)
+                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
+                        b-row
+                          b-col(md="auto")
+                            b-card-text Dimensions: {{imgMeta.width}} x {{imgMeta.height}}
+                          b-col(md="auto")
+                            b-card-text Channels: {{imgMeta.channels}}
+                          b-col(md="auto")
+                            b-card-text Bit Depth: {{imgMeta.bitDepth}}
+                        b-card-text Estimated Space {{estimatedSpace}} Bytes
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
@@ -109,20 +65,26 @@
                     label-cols-lg="2"
                     description="The number of bits to overwrite per channel of the image"
                   )
-                    b-form-input(id="nBitsInput" type="range" min="1" max="8" v-model="nBits")
+                    b-form-input(
+                      id="nBitsInput"
+                      type="range"
+                      min="1"
+                      :max="imgMeta.bitDepth" 
+                      v-model="nBits"
+                      v-on:change="updateSpaceAvailable")
                   b-form-group
-                    b-form-checkbox(v-model="encodeFilename") Encode filename
+                    b-form-checkbox(v-model="encodeFilename" v-on:change="updateSpaceAvailable") Encode filename
                   b-form-group
-                    b-form-checkbox(v-model="encodeFileExt") Encode file extension
+                    b-form-checkbox(v-model="encodeFileExt" v-on:change="updateSpaceAvailable") Encode file extension
               b-button(v-on:click="submit" :disabled='!enableSubmit') Encode
           b-collapse(v-model="showWaiting")
             b-card-text Waiting for a result...
           b-collapse(v-model="showResult")
             b-card-text Result and download to go here
->>>>>>> jack/master
 </template>
 <script>
 import axios from "axios";
+import path from "path";
 
 let INVALID = 0;
 let VALID = 1;
@@ -138,8 +100,16 @@ export default {
       dataFile: null,
       imgFile: null,
       imgFileDataString: "",
-      encodeFilename: true,
-      encodeFileExt: true
+      imgMeta: {
+        width: 1024,
+        height: 1920,
+        channels: 3,
+        bitDepth: 8
+      },
+      encodeFilename: false,
+      encodeFileExt: false,
+      transactionID: "",
+      estimatedSpace: 0
     };
   },
   computed: {
@@ -201,7 +171,7 @@ export default {
           this.formState = RESULT;
           alert(response);
         })
-        .catch(function(error) {
+        .catch(error => {
           alert(error);
         });
     },
@@ -216,10 +186,63 @@ export default {
           this.imgFileDataString = event.target.result;
         };
         reader.readAsDataURL(input.files[0]); // Start the reader, calls above function on completion
+
+        //also trigger upload of file to server
+        let formData = new FormData();
+        formData.append("imgFile", this.imgFile);
+        axios
+          .post("/encode/upload", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+          .then(response => {
+            this.transactionID = response.data.transactionID;
+            this.imgMeta.width = response.data.width;
+            this.imgMeta.height = response.data.height;
+            this.imgMeta.channels = response.data.channels;
+            this.imgMeta.bitDepth = response.data.bitDepth;
+          })
+          .catch(error => {
+            alert(error);
+          });
       }
     },
 
-    formChanged(event) {}
+    updateSpaceAvailable() {
+      var params = { transactionID: this.transactionID };
+      if (this.dataFile) {
+        var ext = path.extname(this.dataFile.name);
+        var filename = path.basename(this.dataFile, ext);
+        if (this.encodeFilename) {
+          params.filename = filename;
+        }
+        if (this.encodeFileExt) {
+          params.ext = ext;
+        }
+      }
+      if (this.nBits > 1) {
+        params.nBits = this.nBits;
+      }
+
+      axios.get("/encode/space", { params })
+      .then(response => {
+        alert(response);
+      })
+      .catch(error => {
+        alert(error);
+      });
+    },
+
+    validateForm() {
+      if (
+        this.validInputImgFile &&
+        this.dataFile &&
+        this.nBits <= this.imgMeta.bitDepth
+      ) {
+        this.formState = VALID;
+      }
+    }
   }
 };
 </script>
