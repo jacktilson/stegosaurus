@@ -189,7 +189,7 @@ export default {
 
         //also trigger upload of file to server
         let formData = new FormData();
-        formData.append("imgFile", this.imgFile);
+        formData.append("imgFile", input.files[0]);
         axios
           .post("/encode/upload", formData, {
             headers: {
