@@ -4,9 +4,9 @@
 # Load Dependencies #
 #####################
 
-from app import app
+from .app import app
 from flask import render_template
-from error_code_info import error_info
+from .error_code_info import error_info
 
 ################################
 # HTTP Exception Handler Route #

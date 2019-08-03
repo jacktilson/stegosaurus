@@ -15,7 +15,7 @@ NAME = 4
 
 def read_img(img_filepath: str) -> numpy.ndarray:
     assert os.path.isfile(img_filepath), "Not a valid path"
-    assert img_filepath.split(".")[-1].lower() in ["bmp"], "Not an accepted file extension"
+    assert img_filepath.split(".")[-1].lower() in ["bmp", "png"], "Not an accepted file extension"
     return cv2.imread(img_filepath)
 
 
