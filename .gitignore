@@ -10,5 +10,3 @@ decoded/*
 encoded/*
 **/.pyc
 **/.wsgi
-steg_server/static/*
-steg_server/templates/*

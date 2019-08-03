@@ -27,7 +27,7 @@ let states = {
   IMG_FILE_INPUT: 0,
   FORM_SUBMITTED: 1,
   FORM_RESULT: 2
-  }
+};
 
 export default {
   name: "Decode",
@@ -35,17 +35,19 @@ export default {
     return {
       pageState: states.DATA_FILE_INPUT,
       imgFile: null,
-      imgFileDataString: "",
+      imgFileDataString: ""
     };
   },
   methods: {
     submit() {
       let formData = new FormData();
       formData.append("imgFile", this.imgFile);
-      axios.post("/decode", formData, {
-        headers: {
+      axios
+        .post("/decode", formData, {
+          headers: {
             "Content-Type": "multipart/form-data"
-          }})
+          }
+        })
         .then(function(response) {
           alert(response);
         })
@@ -53,19 +55,19 @@ export default {
           alert(error);
         });
     },
-    imgFileChange(event) { //Triggered when the file on the image element changes.
+    imgFileChange(event) {
+      //Triggered when the file on the image element changes.
       let input = event.target; //ref to the input element
-      if (input.files && input.files[0]) { // check the input actually has a file in it
+      if (input.files && input.files[0]) {
+        // check the input actually has a file in it
         let reader = new FileReader(); // File reader object for converting file to base64
-        reader.onload = (event) => {
+        reader.onload = event => {
           this.imgFileDataString = event.target.result;
-        }
+        };
         reader.readAsDataURL(input.files[0]); // Start the reader, calls above function on completion
       }
     }
-
   }
 };
 </script>
-<style lang="scss">
-</style>
+<style lang="scss"></style>
