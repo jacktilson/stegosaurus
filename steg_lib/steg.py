@@ -1,6 +1,7 @@
 import os, numpy, cv2, bitarray
 from itertools import product, islice
 from typing import Iterable, Tuple, Dict
+from math import floor
 
 LSB = 1
 EXT = 2
@@ -50,7 +51,8 @@ def space_available(img: numpy.ndarray, **flags) -> int:
     if "filename" in flags:
         subheader_size += 8 + len(bytes(flags["filename"])) * 8
     
-    return (((width * height * channels) - header_size) * (bitdepth - n_lsb)) - subheader_size
+    # Return in bytes.
+    return floor(((((width * height * channels) - header_size) * (bitdepth - n_lsb)) - subheader_size) / 8)
     
 
 ##################
