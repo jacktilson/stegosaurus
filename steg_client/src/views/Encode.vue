@@ -197,11 +197,11 @@ export default {
             }
           })
           .then(response => {
-            this.transactionID = response.data.transactionID;
+            this.transactionID = response.data.trans_id;
             this.imgMeta.width = response.data.width;
             this.imgMeta.height = response.data.height;
             this.imgMeta.channels = response.data.channels;
-            this.imgMeta.bitDepth = response.data.bitDepth;
+            this.imgMeta.bitDepth = response.data.bitdepth;
           })
           .catch(error => {
             alert(error);
@@ -210,7 +210,7 @@ export default {
     },
 
     updateSpaceAvailable() {
-      var params = { transactionID: this.transactionID };
+      var params = { transID: this.transactionID };
       if (this.dataFile) {
         var ext = path.extname(this.dataFile.name);
         var filename = path.basename(this.dataFile, ext);
@@ -225,13 +225,14 @@ export default {
         params.nBits = this.nBits;
       }
 
-      axios.get("/encode/space", { params })
-      .then(response => {
-        alert(response);
-      })
-      .catch(error => {
-        alert(error);
-      });
+      axios
+        .get("/encode/space", { params })
+        .then(response => {
+          this.estimatedSpace = response.data.space_available;
+        })
+        .catch(error => {
+          alert(error);
+        });
     },
 
     validateForm() {
