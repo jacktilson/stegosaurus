@@ -1,6 +1,7 @@
-import os, numpy, cv2, bitarray
+import os, numpy, cv2, bitarray, pathlib
 from itertools import product, islice
 from typing import Iterable, Tuple, Dict
+from math import floor
 
 LSB = 1
 EXT = 2
@@ -13,14 +14,18 @@ NAME = 4
 
 
 def read_img(img_filepath: str) -> numpy.ndarray:
-    assert os.path.isfile(img_filepath), "Not a valid path"
-    assert img_filepath.split(".")[-1].lower() in ["bmp"], "Not an accepted file extension"
-    return cv2.imread(img_filepath)
+    if not os.path.isfile(img_filepath): raise ValueError(f"File path given is not valid. ({img_filepath})")
+    extension = pathlib.Path(img_filepath).suffix[1:].lower()
+    if not extension in ("bmp", "png"): raise(ValueError(f"Extension '{extension}' is not an a supported type'"))
+    img = cv2.imread(img_filepath, flags=cv2.IMREAD_UNCHANGED)
+    if img is None: raise(ValueError(f"The data could not be read. Is it an image? ({img_filepath})"))
+    return img
 
 
 def read_img_binary(bin_img: bytes) -> numpy.ndarray:
-    return cv2.imdecode(bin_img, flags=cv2.IMREAD_ANYDEPTH)
-
+    img = cv2.imdecode(bin_img, flags=cv2.IMREAD_UNCHANGED)
+    if img is None: raise(ValueError(f"The data could not be read. Is it an image?"))
+    return cv2.imdecode(bin_img, flags=cv2.IMREAD_UNCHANGED)
 
 def write_img(img_filepath: str, img: numpy.ndarray):
     cv2.imwrite(img_filepath, img)
@@ -41,16 +46,17 @@ def get_img_meta(img: numpy.ndarray) -> Tuple:
 def space_available(img: numpy.ndarray, **flags) -> int:
     width, height, channels, bitdepth = get_img_meta(img)
     header_size = 8 # encoded at 1LSB. Measured in bits.
-    subheader_size = 8 # Measured in bits
+    subheader_size = 0 # Measured in bits
     n_lsb = flags["n_lsb"] if "n_lsb" in flags else 1
     if n_lsb > 1:
         header_size += 8
     if "extension" in flags:
-        subheader_size += 8 + len(bytes(flags["extension"])) * 8
+        subheader_size += 8 + (len(bytes(flags["extension"], "utf-8")) * 8)
     if "filename" in flags:
-        subheader_size += 8 + len(bytes(flags["filename"])) * 8
+        subheader_size += 8 + (len(bytes(flags["filename"], "utf-8")) * 8)
     
-    return (((width * height * channels) - header_size) * (bitdepth - n_lsb)) - subheader_size
+    # Return in bytes.
+    return ((((width * height * channels) - header_size) * (n_lsb)) - subheader_size) // 8
     
 
 ##################
@@ -97,32 +103,44 @@ def encode(img: numpy.ndarray, data: bytes, **flags) -> numpy.ndarray:
     width, height, channels = img.shape  # image dimensions
     indexes = product(range(width), range(height), range(channels))  # iterator of all indexes in the image
 
-    # create header
-    # First 8 bits: number of bits being encoded in each channel.
-    # Next 32 bits: number bytes of data being encoded)
+    # write flags
     header = bitarray.bitarray(endian="little")
     header.frombytes(flagbyte.to_bytes(1, byteorder="little"))
+    write_to_img(img, islice(indexes, 8), 1, header)
+
+    # write >1 lsb
     if flagbyte & LSB:
+        header = bitarray.bitarray(endian="little")
         header.frombytes(n_lsb.to_bytes(1, byteorder="little"))
+        write_to_img(img, islice(indexes, 8), 1, header)
 
-    # write header to image
-    write_to_img(img, islice(indexes, header.length()), 1, header)
-
-    subheader = bitarray.bitarray(endian="little")
     if flagbyte & EXT:
         ext = bytes(flags["extension"], "utf-8")
-        subheader.frombytes(len(ext).to_bytes(1, byteorder="little"))
-        subheader.frombytes(ext)
+        header = bitarray.bitarray(endian="little")
+        header.frombytes(len(ext).to_bytes(1, byteorder="little"))
+        print(header)
+        write_to_img(img, islice(indexes, -(-8 // n_lsb)), n_lsb, header)
+        header = bitarray.bitarray(endian="little")
+        header.frombytes(ext)
+        print(header)
+        write_to_img(img, islice(indexes, -(-header.length() // n_lsb)), n_lsb, header)
 
     if flagbyte & NAME:
-        name = bytes(flags["filename"], "utf-8")
-        subheader.frombytes(len(name).to_bytes(1, byteorder="little"))
-        subheader.frombytes(name)
+        filename = bytes(flags["filename"], "utf-8")
+        header = bitarray.bitarray(endian="little")
+        header.frombytes(len(ext).to_bytes(1, byteorder="little"))
+        write_to_img(img, islice(indexes, -(-8 // n_lsb)), n_lsb, header)
+        header = bitarray.bitarray(endian="little")
+        header.frombytes(filename)
+        write_to_img(img, islice(indexes, -(-header.length() // n_lsb)), n_lsb, header)
 
-    subheader.frombytes(byte_length.to_bytes(4, byteorder="little"))
 
-    # write header to image
-    write_to_img(img, islice(indexes, subheader.length() // n_lsb), n_lsb, subheader)
+    # write length of data to image
+    print(byte_length)
+    header = bitarray.bitarray(endian="little")
+    header.frombytes(byte_length.to_bytes(4, byteorder="little"))
+    write_to_img(img, islice(indexes, -(-32 // n_lsb)), n_lsb, header)
+    print(header)
 
     # write data to image
     write_to_img(img, indexes, n_lsb, bit_data)
@@ -162,7 +180,7 @@ def decode_img(img: numpy.ndarray) -> Tuple[bytes, Dict[str, str]]:
     """
     Decodes data stored in an image.
     :param img: The image data has been stored in.
-    :return: The data stored in thhe image.
+    :return: The data stored in the image.
     """
     width, height, channels = img.shape  # image dimensions
     indexes = product(range(width), range(height), range(channels))  # iterator of all indexes in the image
@@ -170,33 +188,35 @@ def decode_img(img: numpy.ndarray) -> Tuple[bytes, Dict[str, str]]:
     meta = dict()  # meta object to store header data
 
     # read header data
-    flags = int.from_bytes(read_from_img(img, islice(indexes, 8), 1).tobytes(), byteorder="little")
+    flags = int.from_bytes(read_from_img(img, islice(indexes, 8), 1, 8).tobytes(), byteorder="little")
     n_lsb = 1
     if flags & LSB:
-        n_lsb = int.from_bytes(read_from_img(img, islice(indexes, 8), 1).tobytes(), byteorder="little")
+        n_lsb = int.from_bytes(read_from_img(img, islice(indexes, 8), 1, 8).tobytes(), byteorder="little")
 
     if flags & EXT:
-        ext_len = int.from_bytes(read_from_img(img, islice(indexes, 8 // n_lsb), n_lsb).tobytes(), byteorder="little")
-        ext = (read_from_img(img, islice(indexes, (8 * ext_len) // n_lsb), n_lsb).tobytes()).decode("utf-8")
+        ext_len = int.from_bytes(read_from_img(img, islice(indexes, -(-8 // n_lsb)), n_lsb, 8).tobytes(), byteorder="little") * 8 # extension length in bits
+        print(ext_len)
+        ext = (read_from_img(img, islice(indexes, -(-ext_len // n_lsb)), n_lsb, ext_len).tobytes()).decode("utf-8")
         meta["extension"] = ext
 
     if flags & NAME:
-        name_len = int.from_bytes(read_from_img(img, islice(indexes, 8 // n_lsb), n_lsb).tobytes(), byteorder="little")
-        name = (read_from_img(img, islice(indexes, (8 * name_len) // n_lsb), n_lsb).tobytes()).decode("utf-8")
+        name_len = int.from_bytes(read_from_img(img, islice(indexes, 8 // n_lsb), n_lsb, 8).tobytes(), byteorder="little") * 8 # name lenth in bits
+        name = (read_from_img(img, islice(indexes, -(-name_len // n_lsb)), n_lsb, name_len).tobytes()).decode("utf-8")
         meta["filename"] = name
 
-    data_len = int.from_bytes(read_from_img(img, islice(indexes, 32 // n_lsb), n_lsb).tobytes(), byteorder="little")
-    data = read_from_img(img, islice(indexes, (8 * data_len) // n_lsb), n_lsb).tobytes()
+    data_len = int.from_bytes(read_from_img(img, islice(indexes, -(-32 // n_lsb)), n_lsb, 32).tobytes(), byteorder="little") * 8 # data length in bits
+    data = read_from_img(img, islice(indexes, -(-data_len // n_lsb)), n_lsb, data_len).tobytes()
 
     return data, meta
 
 
-def read_from_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int) -> bitarray:
+def read_from_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, bits: int) -> bitarray:
     """
     Reads the least significant bits of image channels and returns them as a continuous bitarray
     :param img: The image to extract from.
     :param indexes: The indexes of channels in the image to extract from.
     :param n_lsb: The number of bits to extract from each channel
+    :param bits: The number of bits to extract in total.
     :return: Continuous bitarray of extracted bits
     """
     data = bitarray.bitarray(endian="little")
@@ -211,10 +231,16 @@ def read_from_img(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int) -> b
 
     # calculate the bit mask to get only the least significant bits on each pixel channel..
     mask = ((2 ** n_lsb) - 1)  # e.g. 10111010 AND 00000011 (mask) = 00000010
+    
+    # total bits extracted so far
+    total = 0
+    
     # todo fix this not working if LSB ISNT 1 or 2
     for (x, y, c) in indexes:
         chunk = bitarray.bitarray(endian="little")
         chunk.frombytes((img.item(x, y, c) & mask).to_bytes(bytes_size, byteorder="little"))
-        data += chunk[:n_lsb]
-
+        print("Chunk: ", chunk)
+        data += chunk[:(n_lsb if total + n_lsb <= bits else bits - total)]
+        total += n_lsb
+    print("Data: ", data)
     return data
