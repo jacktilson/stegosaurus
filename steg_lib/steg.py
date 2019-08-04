@@ -1,4 +1,4 @@
-import os, numpy, cv2, bitarray
+import os, numpy, cv2, bitarray, pathlib
 from itertools import product, islice
 from typing import Iterable, Tuple, Dict
 from math import floor
@@ -14,14 +14,18 @@ NAME = 4
 
 
 def read_img(img_filepath: str) -> numpy.ndarray:
-    assert os.path.isfile(img_filepath), "Not a valid path"
-    assert img_filepath.split(".")[-1].lower() in ["bmp", "png"], "Not an accepted file extension"
-    return cv2.imread(img_filepath)
+    if not os.path.isfile(img_filepath): raise ValueError(f"File path given is not valid. ({img_filepath})")
+    extension = pathlib.Path(img_filepath).suffix[1:].lower()
+    if not extension in ("bmp", "png"): raise(ValueError(f"Extension '{extension}' is not an a supported type'"))
+    img = cv2.imread(img_filepath, flags=cv2.IMREAD_UNCHANGED)
+    if img is None: raise(ValueError(f"The data could not be read. Is it an image? ({img_filepath})"))
+    return img
 
 
 def read_img_binary(bin_img: bytes) -> numpy.ndarray:
-    return cv2.imdecode(bin_img, flags=cv2.IMREAD_ANYDEPTH)
-
+    img = cv2.imdecode(bin_img, flags=cv2.IMREAD_UNCHANGED)
+    if img is None: raise(ValueError(f"The data could not be read. Is it an image?"))
+    return cv2.imdecode(bin_img, flags=cv2.IMREAD_UNCHANGED)
 
 def write_img(img_filepath: str, img: numpy.ndarray):
     cv2.imwrite(img_filepath, img)
