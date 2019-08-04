@@ -18,7 +18,6 @@ body {
   background-image: url(/static/img/error_background.svg);
   background-size: cover;
 }
-
 .card {
   background: rgba(31, 31, 31, 0.8);
 }
