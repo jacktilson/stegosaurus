@@ -1,55 +1,4 @@
 <template lang="pug">
-<<<<<<< HEAD
-    b-container
-        b-row
-            b-col(sm="12")
-                b-card.mt-3
-                    b-card-title Encode Data
-                    b-card-text Encode some data within a bitmap image file. The algorithm works by changing the colour
-                        |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
-                        | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
-                        | channel with the data to be hidden, changing the actual value by the smallest amount.
-                    form
-                        b-form-group
-                            b-form-file(
-                              v-model="imgFile"
-                              :state="Boolean(imgFile)" 
-                              placeholder="Choose a bitmap file to encode to..."
-                              drop-placeholder="Drop a bitmap file here to encode to..."
-                              v-on:change="imgFileChange($event)")
-
-                        b-collapse(id="imgFilePreviewCollapse" v-model="imgFile")
-                          b-card(no-body).overflow-hidden.mb-3
-                            b-row(no-gutters)
-                              b-col(lg="6")
-                                b-card-img(:src="imgFileDataString").rounded-0
-                              b-col(lg="6")
-                                b-card-body(title="Image Preview")
-                                  b-card-text To be filled with info about image (width, height, channels, bit depth, estimated space available)
-                        b-form-group
-                            b-form-file(
-                              v-model="dataFile"
-                              :state="Boolean(dataFile)"
-                              placeholder="Choose file to encode on to image..."
-                              drop-placeholder="Drop file here to encode onto image...")
-                        b-card-text This sets the number of bits to be overwritten per image channel. Higher values start
-                            |  to distort the image but allow more data to be encoded within the file.
-                        b-form-group
-                            b-row
-                                b-col(sm="2")
-                                    label(for="nBitsInput") Bits: {{nBits}}
-                                b-col(sm="10")
-                                    b-form-input(id="nBitsInput" type="range" min="1" max="8" v-model="nBits")
-                        b-form-group
-                            b-form-checkbox(
-                                v-model="encodeFilename"                                
-                            ) Encode filename
-                        b-form-group
-                            b-form-checkbox(
-                                v-model="encodeFileExt"                                
-                            ) Encode file extension
-                        b-button(v-on:click="submit") Encode
-=======
   b-container
     b-row
       b-col(sm="12")
@@ -119,7 +68,6 @@
             b-card-text Waiting for a result...
           b-collapse(v-model="showResult")
             b-card-text Result and download to go here
->>>>>>> jack/master
 </template>
 <script>
 import axios from "axios";
