@@ -6,7 +6,7 @@
 
 from .app import app, app_root
 from flask import request, send_file, render_template, jsonify, redirect, url_for, send_from_directory
-from .steg_lib_deploy import *
+from ..steg_lib.steg import *
 from .gen_transaction_id import *
 from io import BytesIO
 import os
@@ -121,5 +121,3 @@ def space_encode():
     
     # Hand back a JSON.
     return jsonify(pack_pre_json(trans_id, space, err_code))
-    
-    
