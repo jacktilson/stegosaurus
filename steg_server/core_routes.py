@@ -126,7 +126,7 @@ def space_encode():
 # Encoding User Flow Complete Route #
 #####################################
 
-@app.route('/encode/space', methods = ['POST'])
+@app.route('/encode/complete', methods = ['POST'])
 def complete_encode():
   
     def pack_pre_json(trans_id, err_code):
