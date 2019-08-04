@@ -2,7 +2,7 @@
     b-navbar(toggleable="lg" sticky)
         .container
             b-navbar-brand.my-0.mx-3
-                img(src="/ct_logo.svg" height="96px")
+                img(src="/static/img/ct_logo.svg" height="96px")
             b-navbar-toggle(target="nav-collapse").my-0.mx-0
                 font-awesome-icon(icon="bars" size="2x")
             b-collapse(id="nav-collapse" is-nav).mx-3

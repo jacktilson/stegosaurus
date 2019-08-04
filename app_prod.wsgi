@@ -5,7 +5,7 @@
 ################################################################
 
 
-#!/usr/bin/python
+#!/usr/bin/python3.6
 import sys
 import logging
 logging.basicConfig(stream=sys.stderr)

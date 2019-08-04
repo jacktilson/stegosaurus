@@ -4,20 +4,24 @@
 # Create Flask Instance #
 #########################
 
+import os
 from flask import Flask
 app = Flask(__name__)
+app_root = os.path.dirname(os.path.abspath(__file__))
+app.config['UPLOAD_FOLDER'] = '/'.join([app_root, 'temp'])
+app.config['CUSTOM_STATIC_PATH'] = '/'.join([app_root, 'temp'])
 
 #############################
 # Load Core App Page Routes #
 #############################
 
-from core_routes import *  
+from .core_routes import *  
 
 ##########################
 # HTTP Error Page Routes #
 ##########################
 
-from error_routes import *
+from .error_routes import *
 
 #######################
 # Direct Run Handling #

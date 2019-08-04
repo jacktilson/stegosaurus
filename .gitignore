@@ -9,3 +9,4 @@
 decoded/*
 encoded/*
 **/.pyc
+**/.wsgi
