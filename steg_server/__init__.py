@@ -4,7 +4,7 @@
 # Launch Application #
 ######################
 
-from app import app
+from .app import app
 
 #######################
 # Direct Run Handling #
