@@ -15,7 +15,7 @@ body {
   background-color: rgb(29, 29, 29);
   font-family: "Gill Sans MT", sans-serif;
   color: #eeeeee;
-  background-image: url(/static/img/error_background.svg);
+  background-image: url(/error_background.svg);
   background-size: cover;
 }
 .card {
