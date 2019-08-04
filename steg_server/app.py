@@ -6,7 +6,7 @@
 
 import os
 from flask import Flask
-app = Flask(__name__)
+app = Flask(__name__, static_url_path="/")
 app_root = os.path.dirname(os.path.abspath(__file__))
 app.config['UPLOAD_FOLDER'] = '/'.join([app_root, 'temp'])
 app.config['CUSTOM_STATIC_PATH'] = '/'.join([app_root, 'temp'])

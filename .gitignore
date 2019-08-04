@@ -6,7 +6,7 @@
 **/*.sln
 **/.vs
 **/.save
-decoded/*
-encoded/*
 **/.pyc
 **/.wsgi
+**/.egg-info
+steg_server/temp/*

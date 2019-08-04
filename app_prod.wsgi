@@ -11,5 +11,5 @@ import logging
 logging.basicConfig(stream=sys.stderr)
 sys.path.insert(0,"/var/www/html/flask-app/stegosaurus/")
 
-from steg_server import app as application
+from steg_server.app import app as application
 application.secret_key = 'steggy-key-haha'
