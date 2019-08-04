@@ -16,7 +16,7 @@ NAME = 4
 def read_img(img_filepath: str) -> numpy.ndarray:
     if not os.path.isfile(img_filepath): raise ValueError(f"File path given is not valid. ({img_filepath})")
     extension = pathlib.Path(img_filepath).suffix[1:].lower()
-    if not extension in ("bmp", "png"): raise(ValueError(f"Extension '{extension}' is not an a supported type'"))
+    # if not extension in ("bmp", "png"): raise(ValueError(f"Extension '{extension}' is not an a supported type'"))
     img = cv2.imread(img_filepath, flags=cv2.IMREAD_UNCHANGED)
     if img is None: raise(ValueError(f"The data could not be read. Is it an image? ({img_filepath})"))
     return img
@@ -41,7 +41,7 @@ def bytes_to_bitarray(data: bytes) -> bitarray.bitarray:
     return bits
 
 def get_img_meta(img: numpy.ndarray) -> Tuple:
-    return (*img.shape, img.dtype.itemsize)
+    return (*img.shape, img.dtype.itemsize * 8)
 
 def space_available(img: numpy.ndarray, **flags) -> int:
     width, height, channels, bitdepth = get_img_meta(img)
