@@ -8,5 +8,6 @@
 **/.save
 **/.pyc
 **/.wsgi
-**/.egg-info
+**/*.egg-info
 steg_server/temp/*
+steg_server/client/*
