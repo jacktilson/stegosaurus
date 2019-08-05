@@ -23,8 +23,7 @@
                     v-model="imgFile"
                     placeholder="Choose a bmp/png file..."
                     drop-placeholder="Drop a bmp/png file here to encode to..."
-                    :state="validInputImgFile" 
-                    v-on:change="imgFileChange($event)")
+                    :state="validInputImgFile")
               b-collapse(v-model="showImgInfo").mb-3
                 b-card(no-body).overflow-hidden
                   b-row(no-gutters)
@@ -152,6 +151,38 @@ export default {
       return this.formState === RESULT;
     }
   },
+  watch: {
+    imgFile(val, oldval){
+      if (this.validInputImgFile) { // check the input actually has a valid file in it
+        let reader = new FileReader(); // File reader object for converting file to base64
+        reader.onload = event => {
+          this.imgFileDataString = event.target.result;
+        };
+        reader.readAsDataURL(this.imgFile); // Start the reader, calls above function on completion
+      }
+      
+      //also trigger upload of file to server
+      let formData = new FormData();
+      formData.append("imgFile", this.imgFile);
+      axios
+          .post("/encode/upload", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+          .then(response => {
+            this.transactionID = response.data.trans_id;
+            this.imgMeta.width = response.data.width;
+            this.imgMeta.height = response.data.height;
+            this.imgMeta.channels = response.data.channels;
+            this.imgMeta.bitDepth = response.data.bitdepth;
+            this.updateSpaceAvailable();
+          })
+          .catch(error => {
+            alert(error);
+          });
+    }
+  },
   methods: {
     submit() {
       this.formState = SUBMITTED;
@@ -174,39 +205,6 @@ export default {
         .catch(error => {
           alert(error);
         });
-    },
-
-    imgFileChange(event) {
-      //Triggered when the file on the image element changes.
-      let input = event.target; //ref to the input element
-      if (input.files && input.files[0]) {
-        // check the input actually has a file in it
-        let reader = new FileReader(); // File reader object for converting file to base64
-        reader.onload = event => {
-          this.imgFileDataString = event.target.result;
-        };
-        reader.readAsDataURL(input.files[0]); // Start the reader, calls above function on completion
-
-        //also trigger upload of file to server
-        let formData = new FormData();
-        formData.append("imgFile", input.files[0]);
-        axios
-          .post("/encode/upload", formData, {
-            headers: {
-              "Content-Type": "multipart/form-data"
-            }
-          })
-          .then(response => {
-            this.transactionID = response.data.trans_id;
-            this.imgMeta.width = response.data.width;
-            this.imgMeta.height = response.data.height;
-            this.imgMeta.channels = response.data.channels;
-            this.imgMeta.bitDepth = response.data.bitdepth;
-          })
-          .catch(error => {
-            alert(error);
-          });
-      }
     },
 
     updateSpaceAvailable() {
@@ -248,3 +246,4 @@ export default {
 };
 </script>
 <style lang="scss"></style>
+d
