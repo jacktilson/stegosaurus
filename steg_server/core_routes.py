@@ -130,11 +130,6 @@ def space_encode():
 
 @app.route('/encode/complete', methods = ['POST'])
 def complete_encode():
-  
-    def pack_pre_json(trans_id, err_code):
-      pre_json_space = {"trans_id": trans_id,
-                       "err_code": err_code}
-      return pre_json_complete
     
     def get_size(start_path, divisor = 1):
       total_size = 0
@@ -205,6 +200,6 @@ def complete_encode():
     write_img(enc_file_loc_abs, encode(read_img(orig_img_loc_abs), data_file_bytes, **flags_enc))
     
     # Hand off the result.
-    return jsonify(pack_pre_json(trans_id, err_code))
+    return jsonify({"trans_id": trans_id, "err_code": err_code})
       
     
