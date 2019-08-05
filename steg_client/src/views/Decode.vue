@@ -1,22 +1,31 @@
 <template lang="pug">
-    b-container
-        b-row
-            b-col(sm="12")
-                b-card.mt-3
-                    b-card-title Decode Data
-                    b-card-text lorem ipsum
-                    form
-                        b-form-group
-                            b-form-file(
-                              v-model="imgFile"
-                              :state="Boolean(imgFile)" 
-                              placeholder="Decode image"
-                              drop-placeholder="Drop your encoded image here to be decoded..."
-                              v-on:change="imgFileChange($event)")
-                        b-collapse(id="imgFilePreviewCollapse" v-model="imgFile")
-                          b-card(no-body).overflow-hidden.mb-3
-                            b-card-img(:src="imgFileDataString").rounded-0
-                        b-button(v-on:click="submit") Decode
+b-container
+  b-row
+    b-col(sm="12")
+      b-card.mt-3
+        b-card-title Decode Data
+        b-card-text Decode data from your encoded image which you created on the other page. 
+          | Once you have uploaded the image, you are presented with a button to download the contents.
+        form
+          b-form-group(
+            label="Encoded Image File"
+            label-for="input-imgFile"
+            label-class="font-weight-bold"
+            :description="validInputImgFile?'':'Enter your encoded image file to decode the data inside'"
+            :state="validInputImgFile"
+            :invalid-feedback="feedbackInvalidInputImgFile"
+            :valid-feedback="feedbackValidInputImgFile")
+            b-form-file(
+              id="input-imgFile"
+              v-model="imgFile"
+              placeholder="Choose a bmp/png file..."
+              drop-placeholder="Drop a bmp/png file here to encode to..."
+              :state="validInputImgFile" 
+              v-on:change="imgFileChange($event)")
+          b-collapse(id="imgFilePreviewCollapse" v-model="imgFile")
+            b-card(no-body).overflow-hidden.mb-3
+              b-card-img(:src="imgFileDataString").rounded-0
+          b-button(v-on:click="submit") Decode
 </template>
 <script>
 import axios from "axios";
