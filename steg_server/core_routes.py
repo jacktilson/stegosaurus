@@ -5,8 +5,8 @@
 #####################
 
 from .app import app, app_root
-from flask import request, send_file, render_template, jsonify, redirect, url_for, send_from_directory
-from .steg_lib_deploy import *
+from flask import request, send_file, render_template, jsonify, redirect, url_for, send_from_directory, redirect
+from steg_lib.steg import *
 from .gen_transaction_id import *
 from io import BytesIO
 import os
@@ -18,8 +18,10 @@ import os
 @app.route('/')
 def home():
     """Renders the temp splash page."""
-    return render_template('index.html')
-  
+    return send_from_directory(app.static_folder, 'index.html')
+
+
+
 ##########################
 # File Upload Test Route #
 ##########################
@@ -52,7 +54,7 @@ def upload_encode():
   # Set name of HTML form attribute containing image.
   img_field_name = 'imgFile'
   # Set path to save image on system.
-  img_save_path = 'temp/originals'
+  img_save_path = os.path.join("temp", "originals")
   # Obtain image from POST request.
   img = request.files[img_field_name]
   # Get the file extension (last 3 chars of filename).
@@ -64,7 +66,7 @@ def upload_encode():
   target = os.path.join(app_root, img_save_path)
   # Handle event of target not existing. 
   if not os.path.isdir(target):
-    os.mkdir(target)
+    os.makedirs(target)
   # Create destination for file.
   dest = '/'.join([target, trans_id + '_orig'])
   # Perform the save.
@@ -206,8 +208,3 @@ def complete_encode():
     return jsonify(pack_pre_json(trans_id, err_code))
       
     
-    
-    
-  
-  
-  
