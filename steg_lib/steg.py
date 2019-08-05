@@ -58,18 +58,22 @@ def get_img_meta(img: numpy.ndarray) -> Tuple:
 
 def space_available(img: numpy.ndarray, **flags) -> int:
     width, height, channels, bitdepth = get_img_meta(img)
-    header_size = 8 # encoded at 1LSB. Measured in bits.
-    subheader_size = 0 # Measured in bits
+
+    header_size = 8 # encoded at 1LSB. Measured in bits. 8 initialy because of the flag byte
+    subheader_size = 32 # Measured in bits. Everything encoded at n_lsb
     n_lsb = flags["n_lsb"] if "n_lsb" in flags else 1
     if n_lsb > 1:
         header_size += 8
+
     if "extension" in flags:
         subheader_size += 8 + (len(bytes(flags["extension"], "utf-8")) * 8)
     if "filename" in flags:
         subheader_size += 8 + (len(bytes(flags["filename"], "utf-8")) * 8)
     
+    indexes = width * height * channels
+
     # Return in bytes.
-    return ((((width * height * channels) - header_size) * (n_lsb)) - subheader_size) // 8
+    return ((indexes - header_size - ciel_div(subheader_size, n_lsb)) * n_lsb) // 8
 
 def ciel_div(a: int, b: int):
     return -(-a//b)
