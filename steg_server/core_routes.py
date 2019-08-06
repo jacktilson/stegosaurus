@@ -74,9 +74,6 @@ def form_temp_file_path(trans_id, temp_sub_dir, file_suffix, file_exists=True, f
       # Get the the file name of file concerned.
       file_name = f'{trans_id}_{file_suffix}'
       # Find the file extension for the original image..
-      print(glob.glob("*"))
-      print(glob.glob(f'{file_name}*'))
-      print(glob.glob(f'{file_name}'))
       file_loc_abs = os.path.join(file_dir_abs, glob.glob(f'{file_name}*')[0])
     
     elif not file_exists:
@@ -177,8 +174,6 @@ def check_n_lsb(trans_id, n_lsb):
       int(n_lsb)
     except:
       return fail_response
-    print("THE PATH TO IMG**************")
-    print(form_orig_img_path(trans_id))
     if n_lsb < 1 or n_lsb > get_img_meta(read_img(form_orig_img_path(trans_id)))[3]:
       return fail_response
     else:
@@ -252,8 +247,6 @@ def space_encode():
     # Perform space analysis.
     list_get_params = ['n_lsb', 'extension', 'filename']
     flags_sa = build_flags(list_get_params, request)
-    print(flags_sa)
-    print(form_orig_img_path(trans_id))
     space = space_available(read_img(form_orig_img_path(trans_id)), **flags_sa)
     
     # Hand back a JSON on success.
