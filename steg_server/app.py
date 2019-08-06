@@ -8,8 +8,9 @@ import os
 from flask import Flask
 app = Flask(__name__, static_url_path="/")
 app_root = os.path.dirname(os.path.abspath(__file__))
-app.config['UPLOAD_FOLDER'] = '/'.join([app_root, 'temp'])
-app.config['CUSTOM_STATIC_PATH'] = '/'.join([app_root, 'temp'])
+app.config['UPLOAD_FOLDER'] = os.path.join(app_root, 'temp')
+app.config['CUSTOM_STATIC_PATH'] = os.path.join(app_root, 'temp')
+app.config['APP_HOST'] = "stegosaurus.online"
 
 #############################
 # Load Core App Page Routes #
