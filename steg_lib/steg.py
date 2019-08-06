@@ -37,7 +37,6 @@ def read_img_binary(bin_img: bytes) -> numpy.ndarray:
 
     # raise error if image could not be read
     if img is None: raise(ValueError(f"The data could not be read. Is it an image?"))
-
     return img
 
 def write_img(img_filepath: str, img: numpy.ndarray):
