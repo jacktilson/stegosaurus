@@ -19,10 +19,10 @@
 </template>
 <script>
 import Navbar from "@/components/Navbar.vue";
-import Parallax from 'parallax-js';
+import Parallax from "parallax-js";
 export default {
   components: { Navbar },
-  mounted(){
+  mounted() {
     var parallax = new Parallax(document.getElementById("background"));
   }
 };
@@ -30,7 +30,7 @@ export default {
 <style lang="scss">
 body {
   min-height: 100vh;
-  background-color: #1B092D;
+  background-color: #1b092d;
   font-family: "Gill Sans MT", sans-serif;
   color: #eeeeee;
 }
@@ -58,16 +58,16 @@ body {
   left: 0;
 }
 
-#background{
+#background {
   background-color: transparent;
   overflow-x: hidden;
 }
 
-.layer{
+.layer {
   position: absolute;
   width: 100vw;
   height: 100vh;
-  & div{
+  & div {
     background-size: cover;
     position: relative;
     height: 110%;
@@ -92,6 +92,6 @@ body {
   background: url(/5.svg);
 }
 .layer-6 {
-  background: url(/6.svg); 
+  background: url(/6.svg);
 }
 </style>

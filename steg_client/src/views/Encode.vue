@@ -152,35 +152,36 @@ export default {
     }
   },
   watch: {
-    imgFile(val, oldval){
-      if (this.validInputImgFile) { // check the input actually has a valid file in it
+    imgFile(val, oldval) {
+      if (this.validInputImgFile) {
+        // check the input actually has a valid file in it
         let reader = new FileReader(); // File reader object for converting file to base64
         reader.onload = event => {
           this.imgFileDataString = event.target.result;
         };
         reader.readAsDataURL(this.imgFile); // Start the reader, calls above function on completion
       }
-      
+
       //also trigger upload of file to server
       let formData = new FormData();
       formData.append("img_file", this.imgFile);
       axios
-          .post("/encode/upload", formData, {
-            headers: {
-              "Content-Type": "multipart/form-data"
-            }
-          })
-          .then(response => {
-            this.transactionID = response.data.trans_id;
-            this.imgMeta.width = response.data.width;
-            this.imgMeta.height = response.data.height;
-            this.imgMeta.channels = response.data.channels;
-            this.imgMeta.bitDepth = response.data.bitdepth;
-            this.updateSpaceAvailable();
-          })
-          .catch(error => {
-            alert(error);
-          });
+        .post("/encode/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        })
+        .then(response => {
+          this.transactionID = response.data.trans_id;
+          this.imgMeta.width = response.data.width;
+          this.imgMeta.height = response.data.height;
+          this.imgMeta.channels = response.data.channels;
+          this.imgMeta.bitDepth = response.data.bitdepth;
+          this.updateSpaceAvailable();
+        })
+        .catch(error => {
+          alert(error);
+        });
     }
   },
   methods: {
@@ -208,7 +209,7 @@ export default {
     },
 
     updateSpaceAvailable() {
-      var params = { "trans_id": this.transactionID };
+      var params = { trans_id: this.transactionID };
       if (this.dataFile) {
         var ext = path.extname(this.dataFile.name);
         var filename = path.basename(this.dataFile, ext);

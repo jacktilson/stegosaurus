@@ -2,7 +2,13 @@
 # Load Dependencies #
 #####################
 
-from .core_routes import *
+from .app import app
+from flask import request, send_file, render_template, jsonify, redirect, url_for, send_from_directory, redirect
+from steg_lib.steg import *
+from .gen_transaction_id import *
+from .core_functions import *
+from io import BytesIO
+import os, glob
 
 ###########################
 # Shared Encode Functions #
@@ -10,12 +16,12 @@ from .core_routes import *
 """ This section defines functions for code required more than
 once in the /encode, /space or /complete routes. """
 
-def reply_error_json(trans_id, resp_msg, resp_code=1):
-    """Used to return json containing error information
+def reply_error_json(trans_id, resp_msg, resp_code=1, http_code=400):
+    """Used to return json containing error information and HTTP exception
     in the event that a route encounters a problem."""
-    return(jsonify({"trans_id": trans_id,
+    return jsonify({"trans_id": trans_id,
                     "resp_code": resp_code,
-                    "resp_msg": resp_msg}))
+                    "resp_msg": resp_msg}), http_code
   
 def form_temp_file_path(trans_id, temp_sub_dir, file_suffix, file_exists=True, file_ext=''):
     """Used to return a full file path for a file conformant with
@@ -71,8 +77,6 @@ def get_img_ext(trans_id):
     # Get the the file name of file concerned.
     file_name = f'{trans_id}_orig'
     # Find the file extension for the original image..
-    #print("**********")
-    #print(glob.glob(f'{file_name}*'))
     file_name_with_ext = glob.glob(f'{file_name}*')[0]
     # Strip the file name part.
     file_ext = file_name_with_ext.replace(f'{file_name}', '')
@@ -88,7 +92,13 @@ def store_file_temp(trans_id, file, temp_sub_dir, file_suffix):
     if not os.path.isdir(file_dir_abs):
       os.makedirs(file_dir_abs) # handle event of directory not existing.
     # Get file extension
-    ext = '.' + file.filename[-3:].lower() # N E E D S  I M P R O V E M E N T
+    try:
+      disect_name = file.filename.split('.')
+    except:
+      return reply_error_json(trans_id, f'The {temp_sub_dir} image file uploaded does not have an extension.')
+    ext = f'.{disect_name[len(disect_name)-1]}' # Ext will always be text after final dot.
+    print("THE EXT ***************************************!!!")
+    print(ext)
     # Form absolute path for file to save at.
     file_loc_abs = os.path.join(file_dir_abs, f'{trans_id}_{file_suffix}{ext}')
     # Perform the save of file.
