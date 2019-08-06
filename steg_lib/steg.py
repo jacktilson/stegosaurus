@@ -25,7 +25,7 @@ def read_img(img_filepath: str) -> numpy.ndarray:
 def read_img_binary(bin_img: bytes) -> numpy.ndarray:
     img = cv2.imdecode(bin_img, flags=cv2.IMREAD_UNCHANGED)
     if img is None: raise(ValueError(f"The data could not be read. Is it an image?"))
-    return cv2.imdecode(bin_img, flags=cv2.IMREAD_UNCHANGED)
+    return img
 
 def write_img(img_filepath: str, img: numpy.ndarray):
     cv2.imwrite(img_filepath, img)
