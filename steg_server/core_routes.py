@@ -153,8 +153,8 @@ def complete_encode():
     # Store the result
     write_img(enc_file_path, encoded_img)
     
+
     # Hand off the result.  
     return jsonify({"trans_id": trans_id, "resp_code": 0,
-                    "resp_msg": 'Data encoded to image successfully.'})
-      
+                    "resp_msg": 'Data encoded to image successfully.'})      
     

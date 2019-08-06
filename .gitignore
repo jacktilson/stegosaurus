@@ -10,4 +10,4 @@
 **/.wsgi
 **/*.egg-info
 steg_server/temp/*
-steg_server/client/*
+steg_server/static/client
