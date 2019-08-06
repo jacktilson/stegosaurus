@@ -75,6 +75,7 @@ def space_available(img: numpy.ndarray, **flags) -> int:
     return ((indexes - header_size - ciel_div(subheader_size, n_lsb)) * n_lsb) // 8
 
 def ciel_div(a: int, b: int):
+    """Returns the cieling integer division of a and b"""
     return -(-a//b)
     
 
@@ -152,7 +153,7 @@ def write_bits(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data: b
     :param img: Numpy Array of image data.
     :param indexes: Indexes and ordering of pixel locations in the image to write the data to.
     :param n_lsb: The number of bits in the image to be overwritten in each channel
-    :param chunked_data: Smaller bitarrays of length n_lsb or less to be written directly to the image channels.
+    :param data: Bitarray of data
     """
 
     chunked_data = (data[i:i + n_lsb] for i in range(0, data.length(), n_lsb))
