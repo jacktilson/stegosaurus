@@ -163,7 +163,7 @@ export default {
       
       //also trigger upload of file to server
       let formData = new FormData();
-      formData.append("imgFile", this.imgFile);
+      formData.append("img_file", this.imgFile);
       axios
           .post("/encode/upload", formData, {
             headers: {
@@ -187,11 +187,11 @@ export default {
     submit() {
       this.formState = SUBMITTED;
       let formData = new FormData();
-      formData.append("dataFile", this.dataFile);
-      formData.append("imgFile", this.imgFile);
-      formData.append("nBits", this.nBits);
-      formData.append("encodeFilename", this.encodeFilename);
-      formData.append("encodeFileExt", this.encodeFileExt);
+      formData.append("data_file", this.dataFile);
+      formData.append("trans_id", this.transactionID);
+      formData.append("n_lsb", this.nBits);
+      formData.append("filename", this.encodeFilename);
+      formData.append("extension", this.encodeFileExt);
       axios
         .post("/encode", formData, {
           headers: {
@@ -208,7 +208,7 @@ export default {
     },
 
     updateSpaceAvailable() {
-      var params = { transID: this.transactionID };
+      var params = { "trans_id": this.transactionID };
       if (this.dataFile) {
         var ext = path.extname(this.dataFile.name);
         var filename = path.basename(this.dataFile, ext);
@@ -216,11 +216,11 @@ export default {
           params.filename = filename;
         }
         if (this.encodeFileExt) {
-          params.ext = ext;
+          params.extension = ext;
         }
       }
       if (this.nBits > 1) {
-        params.nBits = this.nBits;
+        params.n_lsb = this.nBits;
       }
 
       axios

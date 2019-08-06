@@ -50,7 +50,7 @@ export default {
   methods: {
     submit() {
       let formData = new FormData();
-      formData.append("imgFile", this.imgFile);
+      formData.append("img_file", this.imgFile);
       axios
         .post("/decode", formData, {
           headers: {
