@@ -1,9 +1,62 @@
 <html>
   <head>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/http_error_style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stegosaurus: {{ err_code }} Error!</title>
   </head>
+  
+  <style>
+  
+   @font-face {
+    font-family: Dino;
+    src: url({{ url_for('static', filename='dino.ttf') }});
+  }
+
+  body {
+    background: linear-gradient(45deg, rgba(255,255,255,1) 40%, rgba(139,139,139,1) 100%);
+    text-align: center;
+    justify-content: center;
+  }
+
+  h1{
+    font-size: 800%;
+    font-family: Dino;
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+
+  h2{
+    font-size: 300%;
+    font-family: Arial;
+    text-align: center;
+  }
+
+  p{
+    font-size: 200%;
+    font-family: Arial;
+    text-align: center;
+  }
+
+  a {
+    font-weight: bold;
+  }
+
+  .online-span{
+    font-size: 50%;
+    font-style: italic;
+  }
+
+  img.steggy {
+    width: 80%;
+    margin-left: -80%;
+  }
+
+  iframe {
+    padding-top: 5%;
+  }
+  
+  
+  </style>
+  
   <body>
 
     <h1>
@@ -29,7 +82,7 @@
       Click <a href="/">here</a> to try this again...
     </p>
 
-    <img src="{{ url_for('static', filename='img/steggy.png') }}" class="steggy">
+    <img src="{{ url_for('static', filename='steggy.png') }}" class="steggy">
 
   </body>
 </html> 
