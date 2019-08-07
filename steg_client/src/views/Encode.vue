@@ -23,7 +23,7 @@
                     v-model="imgFile"
                     placeholder="Choose a bmp/png file..."
                     drop-placeholder="Drop a bmp/png file here to encode to..."
-                    :state="validInputImgFile")
+                    :state="validImgFile")
               b-collapse(v-model="showImgInfo").mb-3
                 b-card(no-body).overflow-hidden
                   b-row(no-gutters)
@@ -80,10 +80,12 @@
             b-card-text Waiting for a result...
           b-collapse(v-model="showResult")
             b-card-text Result and download to go here
+            b-button()
 </template>
 <script>
 import axios from "axios";
 import path from "path";
+import { saveAs } from 'file-saver';
 
 let INVALID = 0;
 let VALID = 1;
@@ -107,7 +109,7 @@ export default {
       },
       encodeFilename: false,
       encodeFileExt: false,
-      transactionID: "",
+      trans_id: "",
       space: 0
     };
   },
@@ -119,7 +121,7 @@ export default {
       );
     },
     feedbackValidImgFile() {
-      return this.validInputImgFile ? "Awesome!" : "";
+      return this.validImgFile ? "Awesome!" : "";
     },
     feedbackInvalidImgFile() {
       if (this.imgFile) {
@@ -133,11 +135,11 @@ export default {
       return Boolean(this.dataFile) && this.dataFile.size <= this.space;
     },
     feedbackValidDataFile() {
-      return this.validDataFile?"Awesome":"";
+      return this.validDataFile ? "Awesome" : "";
     },
     feedbackInvalidDataFile() {
       if (this.dataFile) {
-        if (this.dataFile.size > this.space){
+        if (this.dataFile.size > this.space) {
           return "Data file too large for that image on these settings.";
         }
       }
@@ -147,13 +149,13 @@ export default {
       return [INVALID, VALID].includes(this.formState);
     },
     enableSubmit() {
-      return (this.validInputImgFile && this.validDataFile);
+      return this.formState == VALID;
     },
     showImgInfo() {
-      return this.showForm && this.validInputImgFile;
+      return this.showForm && this.validImgFile;
     },
     showDataInput() {
-      return this.showForm && this.validInputImgFile;
+      return this.showForm && this.validImgFile;
     },
     showEncodeSettings() {
       return this.showForm && this.showDataInput && this.dataFile;
@@ -163,11 +165,11 @@ export default {
     },
     showResult() {
       return this.formState === RESULT;
-    }    
+    }
   },
   watch: {
     imgFile(val, oldval) {
-      if (this.validInputImgFile) {
+      if (this.validImgFile) {
         // check the input actually has a valid file in it
         let reader = new FileReader(); // File reader object for converting file to base64
         reader.onload = event => {
@@ -186,7 +188,7 @@ export default {
           }
         })
         .then(response => {
-          this.transactionID = response.data.trans_id;
+          this.trans_id = response.data.trans_id;
           this.imgMeta.width = response.data.width;
           this.imgMeta.height = response.data.height;
           this.imgMeta.channels = response.data.channels;
@@ -197,16 +199,16 @@ export default {
           alert(error);
         });
     },
-    dataFile(val, oldval){
+    dataFile(val, oldval) {
       this.updateSpace();
     },
-    nBits(val, oldval){
+    nBits(val, oldval) {
       this.updateSpace();
     },
-    encodeFilename(val, oldval){
+    encodeFilename(val, oldval) {
       this.updateSpace();
     },
-    encodeFileExt(val, oldval){
+    encodeFileExt(val, oldval) {
       this.updateSpace();
     }
   },
@@ -217,13 +219,15 @@ export default {
       // Build formdata
       let formData = new FormData();
       formData.append("data_file", this.dataFile);
-      formData.append("trans_id", this.transactionID);
+      formData.append("trans_id", this.trans_id);
       formData.append("n_lsb", this.nBits);
-      if (this.encodeFilename){
-        formData.append("filename", this.dataFile.name);
+      var ext = path.extname(this.dataFile.name);
+      var filename = path.basename(this.dataFile.name, ext);
+      if (this.encodeFileExt) {
+        formData.append("extension", extension);
       }
-      if (this.encodeFileExt){
-        formData.append("extension", this.dataFile.type);
+      if (this.encodeFilename) {
+        formData.append("filename", filename);
       }
 
       // Post it
@@ -234,18 +238,29 @@ export default {
           }
         })
         .then(response => {
-          this.formState = RESULT;
-          alert(response);
+          this.downloadResult();
         })
         .catch(error => {
           alert(error);
         });
     },
 
-    updateSpace() {
+    downloadResult() {
+      axios.get("/encode/download", {
+        params: {
+          trans_id: this.trans_id
+        },
+        responseType: "arraybuffer"
+      }).then(response => {
+        saveAs(new Blob([response.data]), "output.file")
+      }).catch(error => {
+        alert(error);
+      });
+    },
 
+    updateSpace() {
       // Build params
-      var params = { trans_id: this.transactionID };
+      var params = { trans_id: this.trans_id };
       if (this.dataFile) {
         var ext = path.extname(this.dataFile.name);
         var filename = path.basename(this.dataFile.name, ext);
@@ -273,10 +288,12 @@ export default {
     },
 
     validateForm() {
-      if (this.validInputImgFile && this.validDataFile) {
-        this.formState = VALID;
-      } else {
-        this.formState = INVALID;
+      if (![SUBMITTED, RESULT].includes(this.formState)) {
+        if (this.validImgFile && this.validDataFile) {
+          this.formState = VALID;
+        } else {
+          this.formState = INVALID;
+        }
       }
     }
   }
