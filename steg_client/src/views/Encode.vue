@@ -194,7 +194,7 @@ export default {
       formData.append("filename", this.encodeFilename);
       formData.append("extension", this.encodeFileExt);
       axios
-        .post("/encode", formData, {
+        .post("/encode/complete", formData, {
           headers: {
             "Content-Type": "multipart/form-data"
           }
