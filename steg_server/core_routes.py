@@ -21,7 +21,7 @@ def home():
     """Renders the temp splash page."""
     # Ensure domain in use is kosher.
     if request.host == app.config['APP_HOST']: 
-      return send_from_directory(app.static_folder, 'index.html')
+      return send_from_directory(os.path.join(app.static_folder, "client"), 'index.html')
     else:
       return send_from_directory(app.static_folder, 'bad_domain.html')
 
