@@ -8,7 +8,7 @@ from steg_lib.steg import *
 from .gen_transaction_id import *
 from .core_functions import *
 from io import BytesIO
-import os, glob
+import os, glob, json
 
 ###########################
 # Shared Encode Functions #
@@ -22,6 +22,12 @@ def reply_error_json(trans_id, resp_msg, resp_code=1, http_code=400):
     return jsonify({"trans_id": trans_id,
                     "resp_code": resp_code,
                     "resp_msg": resp_msg}), http_code
+def is_json(myjson):
+    try:
+        json_object = json.loads(myjson)
+    except:
+        return False
+    return True
   
 def form_temp_file_path(trans_id, temp_sub_dir, file_suffix, file_exists=True, file_ext=''):
     """Used to return a full file path for a file conformant with
@@ -62,10 +68,15 @@ def read_data_file_bytes(trans_id):
       data_file_bytes = file.read()
     return data_file_bytes
   
-def form_enc_file_path(trans_id, file_exits=True, file_ext=''):
+def form_enc_img_path(trans_id, file_exits=True, file_ext=''):
     """Used to produce the path to the resultant encoded image
     based on the current transaction ID."""
     return form_temp_file_path(trans_id, 'encoded', 'encoded', file_exits, file_ext)
+  
+def form_dec_img_path(trans_id, file_exits=True, file_ext=''):
+    """Used to produce the path to the decoded image uploaded at decode route
+    based on the current transaction ID."""
+    return form_temp_file_path(trans_id, 'decoded', 'decoded', file_exits, file_ext)
   
 def get_img_ext(trans_id):
     """Serves to obtain the file extension, with the dot, of the
@@ -95,10 +106,8 @@ def store_file_temp(trans_id, file, temp_sub_dir, file_suffix):
     try:
       disect_name = file.filename.split('.')
     except:
-      return reply_error_json(trans_id, f'The {temp_sub_dir} image file uploaded does not have an extension.')
+      return None
     ext = f'.{disect_name[len(disect_name)-1]}' # Ext will always be text after final dot.
-    print("THE EXT ***************************************!!!")
-    print(ext)
     # Form absolute path for file to save at.
     file_loc_abs = os.path.join(file_dir_abs, f'{trans_id}_{file_suffix}{ext}')
     # Perform the save of file.
@@ -148,15 +157,28 @@ def build_flags(str_params, int_params, request):
 def report_build_flags_err(trans_id, prob_param):
     return reply_error_json(trans_id, 'There was a problem with the {prob_param} fed to encode function.')
   
-def check_trans_id(trans_id):
-    """Used to see if the original image is still on
+def check_trans_id(trans_id, file_type):
+    """Used to see if the original / encoded / decoded image is still on
     server for this transaction ID."""
     if trans_id == None:
       return reply_error_json(trans_id, 'The transaction ID was not present in the request.')
-    if not form_orig_img_path(trans_id)[0]:
-      return reply_error_json(trans_id, 'The transaction ID is not valid as there is no corresponding image.')
+    
+    if file_type == 'original':
+      if not form_orig_img_path(trans_id)[0]:
+        return reply_error_json(trans_id, 'The transaction ID is not valid as there is no corresponding original image.')
+    
+    elif file_type == 'encoded':
+      if not form_enc_img_path(trans_id, file_exits=True)[0]:
+        return reply_error_json(trans_id, 'The transaction ID is not valid as there is no corresponding encoded image.')
+    
+    elif file_type == 'decoded':
+      if not form_dec_img_path(trans_id, file_exits=True)[0]:
+        return reply_error_json(trans_id, 'The transaction ID is not valid as there is no corresponding decoded image.')
+    
     else:
-      return True
+      return reply_error_json(trans_id, 'An error occured when trying to validate the transaction ID.')
+      
+    return True # All tests must have passed.
   
 def check_n_lsb(trans_id, n_lsb):
     """Used to see whether the prospective number of least significant 
