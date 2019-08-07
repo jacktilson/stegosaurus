@@ -103,7 +103,7 @@ def encode(img: numpy.ndarray, data: bytes, **flags) -> numpy.ndarray:
 
     n_lsb = flags["n_lsb"] if flagbyte & LSB else 1
 
-    if len(data) * 8 > space_available(img, **flags):
+    if len(data) > space_available(img, **flags):
         raise ValueError("Image not big enough for data, either increase image size or bits encoded per channel.")
 
     # image dimensions

@@ -254,7 +254,7 @@ export default {
         },
         responseType: "arraybuffer"
       }).then(response => {
-        let filename = /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).group.filename;
+        let filename = /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).groups.filename;
         saveAs(new Blob([response.data]), filename);
       }).catch(error => {
         alert(error);
