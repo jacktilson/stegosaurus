@@ -8,22 +8,23 @@
             |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
             | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
             | channel with the data to be hidden, changing the actual value by the smallest amount.
+        b-card.mt-3
           b-collapse(v-model="showForm")
             form
               b-form-group(
                 label="Image File"
                 label-for="input-imgFile"
                 label-class="font-weight-bold"
-                :description="validInputImgFile?'':'Enter a image file to hide your data inside.'"
-                :state="validInputImgFile"
-                :invalid-feedback="feedbackInvalidInputImgFile"
-                :valid-feedback="feedbackValidInputImgFile")
+                :description="validImgFile?'':'Enter a image file to hide your data inside.'"
+                :state="validImgFile"
+                :invalid-feedback="feedbackInvalidImgFile"
+                :valid-feedback="feedbackValidImgFile")
                   b-form-file(
                     id="input-imgFile"
                     v-model="imgFile"
                     placeholder="Choose a bmp/png file..."
                     drop-placeholder="Drop a bmp/png file here to encode to..."
-                    :state="validInputImgFile")
+                    :state="validImgFile")
               b-collapse(v-model="showImgInfo").mb-3
                 b-card(no-body).overflow-hidden
                   b-row(no-gutters)
@@ -38,15 +39,16 @@
                             b-card-text Channels: {{imgMeta.channels}}
                           b-col(md="auto")
                             b-card-text Bit Depth: {{imgMeta.bitDepth}}
-                        b-card-text Estimated Space {{estimatedSpace}} Bytes
+                        b-card-text Estimated Space: {{space}} Bytes
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
                   label-for="input-dataFile"
                   label-class="font-weight-bold"
                   :description="dataFile?'':'Enter a data file to encode onto the image'"
-                  :state="Boolean(dataFile)"
-                  :valid-feedback="dataFile?'Awesome!':''"
+                  :state="validDataFile"
+                  :invalid-feedback="feedbackInvalidDataFile"
+                  :valid-feedback="feedbackValidDataFile"
                 )
                   b-form-file(
                     v-model="dataFile"
@@ -69,21 +71,22 @@
                       type="range"
                       min="1"
                       :max="imgMeta.bitDepth" 
-                      v-model="nBits"
-                      v-on:change="updateSpaceAvailable")
+                      v-model="nBits")
                   b-form-group
-                    b-form-checkbox(v-model="encodeFilename" v-on:change="updateSpaceAvailable") Encode filename
+                    b-form-checkbox(v-model="encodeFilename" ) Encode filename
                   b-form-group
-                    b-form-checkbox(v-model="encodeFileExt" v-on:change="updateSpaceAvailable") Encode file extension
+                    b-form-checkbox(v-model="encodeFileExt" ) Encode file extension
               b-button(v-on:click="submit" :disabled='!enableSubmit') Encode
           b-collapse(v-model="showWaiting")
             b-card-text Waiting for a result...
           b-collapse(v-model="showResult")
-            b-card-text Result and download to go here
+            b-card-text Download your file below
+            b-button Download
 </template>
 <script>
 import axios from "axios";
 import path from "path";
+import { saveAs } from 'file-saver';
 
 let INVALID = 0;
 let VALID = 1;
@@ -100,31 +103,45 @@ export default {
       imgFile: null,
       imgFileDataString: "",
       imgMeta: {
-        width: 1024,
-        height: 1920,
-        channels: 3,
-        bitDepth: 8
+        width: 0,
+        height: 0,
+        channels: 0,
+        bitDepth: 0
       },
       encodeFilename: false,
       encodeFileExt: false,
-      transactionID: "",
-      estimatedSpace: 0
+      trans_id: "",
+      space: 0
     };
   },
   computed: {
-    validInputImgFile() {
+    validImgFile() {
       return (
         Boolean(this.imgFile) &&
         ["image/bmp", "image/png"].includes(this.imgFile.type)
       );
     },
-    feedbackValidInputImgFile() {
-      return this.validInputImgFile ? "Awesome!" : "";
+    feedbackValidImgFile() {
+      return this.validImgFile ? "Awesome!" : "";
     },
-    feedbackInvalidInputImgFile() {
+    feedbackInvalidImgFile() {
       if (this.imgFile) {
         if (!["image/bmp", "image/png"].includes(this.imgFile.type)) {
-          return "Needs to be a .Needs to be a .bmp or a .png";
+          return "Needs to be a .bmp or a .png";
+        }
+      }
+      return "";
+    },
+    validDataFile() {
+      return Boolean(this.dataFile) && this.dataFile.size <= this.space;
+    },
+    feedbackValidDataFile() {
+      return this.validDataFile ? "Awesome" : "";
+    },
+    feedbackInvalidDataFile() {
+      if (this.dataFile) {
+        if (this.dataFile.size > this.space) {
+          return "Data file too large for that image on these settings.";
         }
       }
       return "";
@@ -133,13 +150,13 @@ export default {
       return [INVALID, VALID].includes(this.formState);
     },
     enableSubmit() {
-      return this.formState === VALID;
+      return this.formState == VALID;
     },
     showImgInfo() {
-      return this.showForm && this.validInputImgFile;
+      return this.showForm && this.validImgFile;
     },
     showDataInput() {
-      return this.showForm && this.validInputImgFile;
+      return this.showForm && this.validImgFile;
     },
     showEncodeSettings() {
       return this.showForm && this.showDataInput && this.dataFile;
@@ -153,7 +170,7 @@ export default {
   },
   watch: {
     imgFile(val, oldval) {
-      if (this.validInputImgFile) {
+      if (this.validImgFile) {
         // check the input actually has a valid file in it
         let reader = new FileReader(); // File reader object for converting file to base64
         reader.onload = event => {
@@ -172,27 +189,49 @@ export default {
           }
         })
         .then(response => {
-          this.transactionID = response.data.trans_id;
+          this.trans_id = response.data.trans_id;
           this.imgMeta.width = response.data.width;
           this.imgMeta.height = response.data.height;
           this.imgMeta.channels = response.data.channels;
           this.imgMeta.bitDepth = response.data.bitdepth;
-          this.updateSpaceAvailable();
+          this.updateSpace();
         })
         .catch(error => {
           alert(error);
         });
+    },
+    dataFile(val, oldval) {
+      this.updateSpace();
+    },
+    nBits(val, oldval) {
+      this.updateSpace();
+    },
+    encodeFilename(val, oldval) {
+      this.updateSpace();
+    },
+    encodeFileExt(val, oldval) {
+      this.updateSpace();
     }
   },
   methods: {
     submit() {
       this.formState = SUBMITTED;
+
+      // Build formdata
       let formData = new FormData();
       formData.append("data_file", this.dataFile);
-      formData.append("trans_id", this.transactionID);
+      formData.append("trans_id", this.trans_id);
       formData.append("n_lsb", this.nBits);
-      formData.append("filename", this.encodeFilename);
-      formData.append("extension", this.encodeFileExt);
+      var extension = path.extname(this.dataFile.name);
+      var filename = path.basename(this.dataFile.name, extension);
+      if (this.encodeFileExt) {
+        formData.append("extension", extension);
+      }
+      if (this.encodeFilename) {
+        formData.append("filename", filename);
+      }
+
+      // Post it
       axios
         .post("/encode/complete", formData, {
           headers: {
@@ -201,18 +240,33 @@ export default {
         })
         .then(response => {
           this.formState = RESULT;
-          alert(response);
+          this.downloadResult();
         })
         .catch(error => {
           alert(error);
         });
     },
 
-    updateSpaceAvailable() {
-      var params = { trans_id: this.transactionID };
+    downloadResult() {
+      axios.get("/encode/download", {
+        params: {
+          trans_id: this.trans_id
+        },
+        responseType: "arraybuffer"
+      }).then(response => {
+        let filename = /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).group.filename;
+        saveAs(new Blob([response.data]), filename);
+      }).catch(error => {
+        alert(error);
+      });
+    },
+
+    updateSpace() {
+      // Build params
+      var params = { trans_id: this.trans_id };
       if (this.dataFile) {
         var ext = path.extname(this.dataFile.name);
-        var filename = path.basename(this.dataFile, ext);
+        var filename = path.basename(this.dataFile.name, ext);
         if (this.encodeFilename) {
           params.filename = filename;
         }
@@ -224,10 +278,12 @@ export default {
         params.n_lsb = this.nBits;
       }
 
+      // Post it
       axios
         .get("/encode/space", { params })
         .then(response => {
-          this.estimatedSpace = response.data.space_available;
+          this.space = response.data.space_available;
+          this.validateForm();
         })
         .catch(error => {
           alert(error);
@@ -235,12 +291,12 @@ export default {
     },
 
     validateForm() {
-      if (
-        this.validInputImgFile &&
-        this.dataFile &&
-        this.nBits <= this.imgMeta.bitDepth
-      ) {
-        this.formState = VALID;
+      if (![SUBMITTED, RESULT].includes(this.formState)) {
+        if (this.validImgFile && this.validDataFile) {
+          this.formState = VALID;
+        } else {
+          this.formState = INVALID;
+        }
       }
     }
   }
