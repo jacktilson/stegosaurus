@@ -52,7 +52,7 @@ export default {
       let formData = new FormData();
       formData.append("img_file", this.imgFile);
       axios
-        .post("/decode", formData, {
+        .post("/decode/process", formData, {
           headers: {
             "Content-Type": "multipart/form-data"
           }
