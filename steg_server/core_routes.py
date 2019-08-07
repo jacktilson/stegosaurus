@@ -238,5 +238,5 @@ def process_decode():
       return_filename = f'{filename}.{extension}'
     
     # Send back the decoded output file.
-    return send_file(BytesIO(data), attachment_filename=return_filename)
+    return send_file(BytesIO(data), attachment_filename=return_filename, as_attachment=True)
     
