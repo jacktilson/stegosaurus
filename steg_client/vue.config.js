@@ -1,5 +1,5 @@
 // vue.config.js
 module.exports = {
-  outputDir: "../steg_server/static",
-  assetsDir: "client"
+  publicPath:"/static/client",
+  outputDir: "../steg_server/static/client"
 };
