@@ -8,6 +8,7 @@
             |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
             | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
             | channel with the data to be hidden, changing the actual value by the smallest amount.
+        b-card.mt-3
           b-collapse(v-model="showForm")
             form
               b-form-group(
@@ -79,8 +80,8 @@
           b-collapse(v-model="showWaiting")
             b-card-text Waiting for a result...
           b-collapse(v-model="showResult")
-            b-card-text Result and download to go here
-            b-button()
+            b-card-text Download your file below
+            b-button Download
 </template>
 <script>
 import axios from "axios";
@@ -221,8 +222,8 @@ export default {
       formData.append("data_file", this.dataFile);
       formData.append("trans_id", this.trans_id);
       formData.append("n_lsb", this.nBits);
-      var ext = path.extname(this.dataFile.name);
-      var filename = path.basename(this.dataFile.name, ext);
+      var extension = path.extname(this.dataFile.name);
+      var filename = path.basename(this.dataFile.name, extension);
       if (this.encodeFileExt) {
         formData.append("extension", extension);
       }
@@ -238,6 +239,7 @@ export default {
           }
         })
         .then(response => {
+          this.formState = RESULT;
           this.downloadResult();
         })
         .catch(error => {
@@ -252,7 +254,8 @@ export default {
         },
         responseType: "arraybuffer"
       }).then(response => {
-        saveAs(new Blob([response.data]), "output.file")
+        let filename = /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).group.filename;
+        saveAs(new Blob([response.data]), filename);
       }).catch(error => {
         alert(error);
       });
