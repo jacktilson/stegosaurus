@@ -121,7 +121,7 @@ def complete_encode():
     if trans_id_test != True: return trans_id_test
     
     # Obtain and validate the proposed number of LSBs.
-    n_lsb = int(request.form.get('n_lsb', default=None))
+    n_lsb = int(request.form.get('n_lsb', default=1))
     n_lsb_test = check_n_lsb(trans_id, n_lsb)
     if n_lsb_test != True: return n_lsb_test
     

@@ -32,6 +32,7 @@ def read_img(img_filepath: str) -> numpy.ndarray:
 
 def read_img_binary(bin_img: bytes) -> numpy.ndarray:
 
+    # convert from bytes to numpy buffer required by imdecode
     data = numpy.frombuffer(bin_img, numpy.uint8)
     
     # try and read the image
@@ -54,7 +55,7 @@ def bytes_to_bitarray(data: bytes) -> bitarray.bitarray:
     return bits
 
 def get_img_meta(img: numpy.ndarray) -> Tuple:
-    return (*img.shape, img.dtype.itemsize * 8) if len(img.shape) == 3 else (*img.shape, 1, img.dtype.itemsize)
+    return (*img.shape, img.dtype.itemsize * 8) if len(img.shape) == 3 else (*img.shape, 1, img.dtype.itemsize * 8)
 
 def space_available(img: numpy.ndarray, **flags) -> int:
     width, height, channels, bitdepth = get_img_meta(img)
@@ -62,18 +63,18 @@ def space_available(img: numpy.ndarray, **flags) -> int:
     header_size = 8 # encoded at 1LSB. Measured in bits. 8 initialy because of the flag byte
     subheader_size = 32 # Measured in bits. Everything encoded at n_lsb
     n_lsb = flags["n_lsb"] if "n_lsb" in flags else 1
-    if n_lsb > 1:
-        header_size += 8
+    if n_lsb > 1: header_size += 8
 
-    if "extension" in flags:
-        subheader_size += 8 + (len(bytes(flags["extension"], "utf-8")) * 8)
-    if "filename" in flags:
-        subheader_size += 8 + (len(bytes(flags["filename"], "utf-8")) * 8)
+    if "extension" in flags: subheader_size += 8 + (len(bytes(flags["extension"], "utf-8")) * 8)
+    if "filename" in flags: subheader_size += 8 + (len(bytes(flags["filename"], "utf-8")) * 8)
     
-    indexes = width * height * channels
+    indexes = width * height * channels # the number of bytes available
 
-    # Return in bytes.
-    return ((indexes - header_size - ciel_div(subheader_size, n_lsb)) * n_lsb) // 8
+    # Return in bytes. All applications of this function are working in bytes.
+    free_bytes = indexes - (header_size // 8) - (subheader_size // 8)
+    usable_bits = free_bytes * n_lsb
+    usable_bytes = usable_bits // 8
+    return usable_bytes
 
 def ciel_div(a: int, b: int):
     """Returns the cieling integer division of a and b"""
@@ -94,16 +95,13 @@ def encode(img: numpy.ndarray, data: bytes, **flags) -> numpy.ndarray:
 
     # construct the flag byte that comes at the first part of the file.
     flagbyte = 0
-    if "n_lsb" in flags and flags["n_lsb"] > 1:
-        flagbyte |= LSB
-    if "extension" in flags:
-        flagbyte |= EXT
-    if "filename" in flags:
-        flagbyte |= NAME
+    if "n_lsb" in flags and flags["n_lsb"] > 1: flagbyte |= LSB
+    if "extension" in flags: flagbyte |= EXT
+    if "filename" in flags: flagbyte |= NAME
 
     n_lsb = flags["n_lsb"] if flagbyte & LSB else 1
 
-    if len(data) * 8 > space_available(img, **flags):
+    if len(data) > space_available(img, **flags):
         raise ValueError("Image not big enough for data, either increase image size or bits encoded per channel.")
 
     # image dimensions
