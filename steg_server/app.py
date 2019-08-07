@@ -6,7 +6,7 @@
 
 import os
 from flask import Flask
-app = Flask(__name__, static_url_path="/")
+app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'temp')
 app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024 # Max post request size 64MB
 app.config['CUSTOM_STATIC_PATH'] = os.path.join(app.root_path, 'temp')
