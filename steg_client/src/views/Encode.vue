@@ -30,7 +30,7 @@
                     b-col(lg="6")
                       b-card-img(:src="imgFileDataString").rounded-0
                     b-col(lg="6")
-                      b-card-body(:title="`Image: ${imgFile?.name:''}`")
+                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
                         b-row
                           b-col(md="auto")
                             b-card-text Dimensions: {{imgMeta.width}} x {{imgMeta.height}}
@@ -46,7 +46,7 @@
                   label-class="font-weight-bold"
                   :description="dataFile?'':'Enter a data file to encode onto the image'"
                   :state="validDataFile"
-                  :invalid-feedback="feedbackInValidDataFile"
+                  :invalid-feedback="feedbackInvalidDataFile"
                   :valid-feedback="feedbackValidDataFile"
                 )
                   b-form-file(
@@ -70,12 +70,11 @@
                       type="range"
                       min="1"
                       :max="imgMeta.bitDepth" 
-                      v-model="nBits"
-                      v-on:change="updateSpaceAvailable")
+                      v-model="nBits")
                   b-form-group
-                    b-form-checkbox(v-model="encodeFilename" v-on:change="updateSpaceAvailable") Encode filename
+                    b-form-checkbox(v-model="encodeFilename" ) Encode filename
                   b-form-group
-                    b-form-checkbox(v-model="encodeFileExt" v-on:change="updateSpaceAvailable") Encode file extension
+                    b-form-checkbox(v-model="encodeFileExt" ) Encode file extension
               b-button(v-on:click="submit" :disabled='!enableSubmit') Encode
           b-collapse(v-model="showWaiting")
             b-card-text Waiting for a result...
@@ -134,10 +133,10 @@ export default {
       return Boolean(this.dataFile) && this.dataFile.size <= this.space;
     },
     feedbackValidDataFile() {
-      return validDataFile?"Awesome":"";
+      return this.validDataFile?"Awesome":"";
     },
     feedbackInvalidDataFile() {
-      if (Boolean(this.dataFile)) {
+      if (this.dataFile) {
         if (this.dataFile.size > this.space){
           return "Data file too large for that image on these settings.";
         }
@@ -148,7 +147,7 @@ export default {
       return [INVALID, VALID].includes(this.formState);
     },
     enableSubmit() {
-      if (this.validInputImgFile && this.validDataFile);
+      return (this.validInputImgFile && this.validDataFile);
     },
     showImgInfo() {
       return this.showForm && this.validInputImgFile;
@@ -192,7 +191,7 @@ export default {
           this.imgMeta.height = response.data.height;
           this.imgMeta.channels = response.data.channels;
           this.imgMeta.bitDepth = response.data.bitdepth;
-          this.updateSpaceAvailable();
+          this.updateSpace();
         })
         .catch(error => {
           alert(error);
