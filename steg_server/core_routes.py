@@ -215,28 +215,18 @@ def delete_encode():
 def process_decode():
     
     # Obtain image from POST request.
-    dec_img_file = request.files.get('img_file', default=None)
-    if dec_img_file is None: return reply_error_json('none', 'An image was not present in the POST request.')
+    img_file = request.files.get('img_file', default=None)
+    if img_file is None: return reply_error_json('none', 'An image was not present in the POST request.')
     
     # Perform the decode.
-    bytes_file = dec_img_file.read()
-    data, meta = decode_img(read_img_binary(bytes_file))
+    data, meta = decode_img(read_img_binary(img_file.read()))
     
     # Fetch metadata
-    filename = meta.get("filename")
-    extension = meta.get("extension")
+    filename = meta.get("filename", "output") #defaults to "output" if "filename" not present 
+    extension = meta.get("extension", "") #defaults to "" if "extension" not present
     
     # Form attachement filename.
-    return_filename = ''
-    if filename is None and extension is None:
-      return_filename = 'output'
-    elif filename is None and extension is not None:
-      return_filename = f'output.{extension}'
-    elif filename is not None and extension is None:
-      return_filename = filename
-    elif filename is not None and extension is not None:
-      return_filename = f'{filename}.{extension}'
+    attachment_filename = f"{filename}.{extension}" if extension != "" else filename
     
     # Send back the decoded output file.
-    return send_file(BytesIO(data), attachment_filename=return_filename, as_attachment=True)
-    
+    return send_file(BytesIO(data), attachment_filename=attachment_filename, as_attachment=True)
