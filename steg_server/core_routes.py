@@ -169,7 +169,7 @@ def download_encode():
     # Obtain the relevant GET args.
     
     # Obtain and validate transaction ID
-    trans_id = request.form.get('trans_id', default=None)
+    trans_id = request.args.get('trans_id', default=None)
     trans_id_test = check_trans_id(trans_id, 'encoded')
     if trans_id_test != True: return trans_id_test
     
@@ -238,5 +238,5 @@ def process_decode():
       return_filename = f'{filename}.{extension}'
     
     # Send back the decoded output file.
-    return send_file(BytesIO(data), attachment_filename=return_filename)
+    return send_file(BytesIO(data), attachment_filename=return_filename, as_attachment=True)
     
