@@ -32,8 +32,10 @@ def read_img(img_filepath: str) -> numpy.ndarray:
 
 def read_img_binary(bin_img: bytes) -> numpy.ndarray:
 
+    data = numpy.frombuffer(bin_img, numpy.uint8)
+    
     # try and read the image
-    img = cv2.imdecode(bin_img, flags=cv2.IMREAD_UNCHANGED)
+    img = cv2.imdecode(data, flags=cv2.IMREAD_UNCHANGED)
 
     # raise error if image could not be read
     if img is None: raise(ValueError(f"The data could not be read. Is it an image?"))
@@ -192,7 +194,7 @@ def decode_img(img: numpy.ndarray) -> Tuple[bytes, Dict[str, str]]:
 
     # read data
     data_len = read_int(img, indexes, n_lsb, 32)
-    data = read_bits(img, islice(indexes, -(-data_len // n_lsb)), n_lsb, data_len * 8).tobytes()
+    data = read_bits(img, islice(indexes, ciel_div(data_len * 8, n_lsb)), n_lsb, data_len * 8).tobytes()
 
     return data, meta
 

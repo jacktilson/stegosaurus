@@ -10,7 +10,7 @@ from steg_lib.steg import *
 from .gen_transaction_id import *
 from .core_functions import *
 from io import BytesIO
-import os, glob
+import os, glob, json
 
 ##################
 # Homepage Route #
@@ -69,6 +69,7 @@ def upload_encode():
   
   # Drop the image in relevant directory, retain path.
   img_abs_path = store_file_temp(trans_id, img_file, 'originals', 'orig')
+  if img_abs_path is None: reply_error_json(trans_id, 'The image file uploaded does not have an extension.')
 
   # Grab information about the newly saved image.
   img_meta = get_img_meta(read_img(img_abs_path))
@@ -89,7 +90,7 @@ def space_encode():
     
     # Obtain and validate transaction ID.
     trans_id = request.args.get('trans_id', default=None)
-    trans_id_test = check_trans_id(trans_id)
+    trans_id_test = check_trans_id(trans_id, 'original')
     if trans_id_test != True: return trans_id_test
     
     # Obtain and validate proposed LSBs.
@@ -116,7 +117,7 @@ def complete_encode():
     
     # Obtain and validate transaction ID
     trans_id = request.form.get('trans_id', default=None)
-    trans_id_test = check_trans_id(trans_id)
+    trans_id_test = check_trans_id(trans_id, 'original')
     if trans_id_test != True: return trans_id_test
     
     # Obtain and validate the proposed number of LSBs.
@@ -157,4 +158,85 @@ def complete_encode():
     # Hand off the result.  
     return jsonify({"trans_id": trans_id, "resp_code": 0,
                     "resp_msg": 'Data encoded to image successfully.'})      
+
+#####################################
+# Encoded File URL Generation Route #
+#####################################
+
+@app.route('/encode/download', methods = ['GET'])
+def download_encode():
+    
+    # Obtain the relevant GET args.
+    
+    # Obtain and validate transaction ID
+    trans_id = request.form.get('trans_id', default=None)
+    trans_id_test = check_trans_id(trans_id, 'encoded')
+    if trans_id_test != True: return trans_id_test
+    
+    # Obtain the path for the encoded image.
+    enc_file_path_abs = form_enc_img_path(trans_id)[1]
+    
+    # Send off the encoded file
+    return send_file(enc_file_path_abs)
+ 
+###############################
+# Encode Files Deletion Route #
+###############################
+
+@app.route('/encode/delete', methods = ['GET'])
+def delete_encode():
+    
+    # Obtain the relevant GET args.
+    
+    # Obtain and validate transaction ID
+    trans_id = request.form.get('trans_id', default=None)
+    trans_id_test = check_trans_id(trans_id, 'encoded')
+    if trans_id_test != True: return trans_id_test
+    
+    # Obtain the path for the encoded image.
+    orig_img_path_abs = form_orig_img_path(trans_id)[1]
+    data_file_path_abs = form_data_file_path(trans_id)[1]
+    enc_img_path_abs = form_enc_img_path(trans_id)[1]
+    
+    # Cycle though files to see if need to delete. Assuming if not found, can ignore.
+    if orig_img_path_abs is not None: os.remove(orig_img_path_abs)
+    if data_file_path_abs is not None: os.remove(data_file_path_abs)
+    if enc_img_path_abs is not None: os.remove(enc_img_path_abs)
+      
+    return jsonify({"trans_id": trans_id, "resp_code": 0,
+                    "resp_msg": 'All encode transaction files deleted successfully.'})
+  
+  
+##############################
+# Decode File Upload Process #
+##############################
+
+@app.route('/decode/process', methods = ['POST'])
+def process_decode():
+    
+    # Obtain image from POST request.
+    dec_img_file = request.files.get('img_file', default=None)
+    if dec_img_file is None: return reply_error_json('none', 'An image was not present in the POST request.')
+    
+    # Perform the decode.
+    bytes_file = dec_img_file.read()
+    data, meta = decode_img(read_img_binary(bytes_file))
+    
+    # Fetch metadata
+    filename = meta.get("filename")
+    extension = meta.get("extension")
+    
+    # Form attachement filename.
+    return_filename = ''
+    if filename is None and extension is None:
+      return_filename = 'output'
+    elif filename is None and extension is not None:
+      return_filename = f'output.{extension}'
+    elif filename is not None and extension is None:
+      return_filename = filename
+    elif filename is not None and extension is not None:
+      return_filename = f'{filename}.{extension}'
+    
+    # Send back the decoded output file.
+    return send_file(BytesIO(data), attachment_filename=return_filename)
     
