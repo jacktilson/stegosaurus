@@ -137,7 +137,7 @@ def complete_encode():
     data_file_path = store_file_temp(trans_id, data_file, 'data', 'data')
     
     # Set the prospective destination file with extension.
-    enc_file_path = form_enc_file_path(trans_id, file_exits=False, file_ext=get_img_ext(trans_id))[1]
+    enc_file_path = form_enc_img_path(trans_id, file_exits=False, file_ext=get_img_ext(trans_id))[1]
 
     # Read the original image into bytes.
     in_img = read_img(form_orig_img_path(trans_id)[1])
@@ -174,10 +174,10 @@ def download_encode():
     if trans_id_test != True: return trans_id_test
     
     # Obtain the path for the encoded image.
-    enc_file_path_abs = form_enc_img_path(trans_id)[1]
+    enc_img_path_abs = form_enc_img_path(trans_id)[1]
     
     # Send off the encoded file
-    return send_file(enc_file_path_abs)
+    return send_file(enc_img_path_abs)
  
 ###############################
 # Encode Files Deletion Route #
