@@ -29,7 +29,7 @@ b-container
 </template>
 <script>
 import axios from "axios";
-
+import { saveAs } from "file-saver";
 // Page States
 
 let states = {
@@ -55,10 +55,11 @@ export default {
         .post("/decode/process", formData, {
           headers: {
             "Content-Type": "multipart/form-data"
-          }
+          },
+          responseType: "arraybuffer"
         })
         .then(function(response) {
-          alert(response);
+          saveAs(new Blob([response.data]), /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).groups.filename);
         })
         .catch(function(error) {
           alert(error);
