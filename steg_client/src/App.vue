@@ -77,21 +77,21 @@ body {
   }
 }
 .layer-1 {
-  background: url(/1.svg);
+  background: url(./assets/1.svg);
 }
 .layer-2 {
-  background: url(/2.svg);
+  background: url(./assets/2.svg);
 }
 .layer-3 {
-  background: url(/3.svg);
+  background: url(./assets/3.svg);
 }
 .layer-4 {
-  background: url(/4.svg);
+  background: url(./assets/4.svg);
 }
 .layer-5 {
-  background: url(/5.svg);
+  background: url(./assets/5.svg);
 }
 .layer-6 {
-  background: url(/6.svg);
+  background: url(./assets/6.svg);
 }
 </style>
