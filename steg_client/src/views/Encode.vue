@@ -14,10 +14,10 @@
                 label="Image File"
                 label-for="input-imgFile"
                 label-class="font-weight-bold"
-                :description="validInputImgFile?'':'Enter a image file to hide your data inside.'"
-                :state="validInputImgFile"
-                :invalid-feedback="feedbackInvalidInputImgFile"
-                :valid-feedback="feedbackValidInputImgFile")
+                :description="validImgFile?'':'Enter a image file to hide your data inside.'"
+                :state="validImgFile"
+                :invalid-feedback="feedbackInvalidImgFile"
+                :valid-feedback="feedbackValidImgFile")
                   b-form-file(
                     id="input-imgFile"
                     v-model="imgFile"
@@ -30,7 +30,7 @@
                     b-col(lg="6")
                       b-card-img(:src="imgFileDataString").rounded-0
                     b-col(lg="6")
-                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
+                      b-card-body(:title="`Image: ${imgFile?.name:''}`")
                         b-row
                           b-col(md="auto")
                             b-card-text Dimensions: {{imgMeta.width}} x {{imgMeta.height}}
@@ -38,15 +38,16 @@
                             b-card-text Channels: {{imgMeta.channels}}
                           b-col(md="auto")
                             b-card-text Bit Depth: {{imgMeta.bitDepth}}
-                        b-card-text Estimated Space {{estimatedSpace}} Bytes
+                        b-card-text Estimated Space: {{space}} Bytes
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
                   label-for="input-dataFile"
                   label-class="font-weight-bold"
                   :description="dataFile?'':'Enter a data file to encode onto the image'"
-                  :state="Boolean(dataFile)"
-                  :valid-feedback="dataFile?'Awesome!':''"
+                  :state="validDataFile"
+                  :invalid-feedback="feedbackInValidDataFile"
+                  :valid-feedback="feedbackValidDataFile"
                 )
                   b-form-file(
                     v-model="dataFile"
@@ -100,31 +101,45 @@ export default {
       imgFile: null,
       imgFileDataString: "",
       imgMeta: {
-        width: 1024,
-        height: 1920,
-        channels: 3,
-        bitDepth: 8
+        width: 0,
+        height: 0,
+        channels: 0,
+        bitDepth: 0
       },
       encodeFilename: false,
       encodeFileExt: false,
       transactionID: "",
-      estimatedSpace: 0
+      space: 0
     };
   },
   computed: {
-    validInputImgFile() {
+    validImgFile() {
       return (
         Boolean(this.imgFile) &&
         ["image/bmp", "image/png"].includes(this.imgFile.type)
       );
     },
-    feedbackValidInputImgFile() {
+    feedbackValidImgFile() {
       return this.validInputImgFile ? "Awesome!" : "";
     },
-    feedbackInvalidInputImgFile() {
+    feedbackInvalidImgFile() {
       if (this.imgFile) {
         if (!["image/bmp", "image/png"].includes(this.imgFile.type)) {
-          return "Needs to be a .Needs to be a .bmp or a .png";
+          return "Needs to be a .bmp or a .png";
+        }
+      }
+      return "";
+    },
+    validDataFile() {
+      return Boolean(this.dataFile) && this.dataFile.size <= this.space;
+    },
+    feedbackValidDataFile() {
+      return validDataFile?"Awesome":"";
+    },
+    feedbackInvalidDataFile() {
+      if (Boolean(this.dataFile)) {
+        if (this.dataFile.size > this.space){
+          return "Data file too large for that image on these settings.";
         }
       }
       return "";
@@ -133,7 +148,7 @@ export default {
       return [INVALID, VALID].includes(this.formState);
     },
     enableSubmit() {
-      return this.formState === VALID;
+      if (this.validInputImgFile && this.validDataFile);
     },
     showImgInfo() {
       return this.showForm && this.validInputImgFile;
@@ -149,7 +164,7 @@ export default {
     },
     showResult() {
       return this.formState === RESULT;
-    }
+    }    
   },
   watch: {
     imgFile(val, oldval) {
@@ -182,19 +197,39 @@ export default {
         .catch(error => {
           alert(error);
         });
+    },
+    dataFile(val, oldval){
+      this.updateSpace();
+    },
+    nBits(val, oldval){
+      this.updateSpace();
+    },
+    encodeFilename(val, oldval){
+      this.updateSpace();
+    },
+    encodeFileExt(val, oldval){
+      this.updateSpace();
     }
   },
   methods: {
     submit() {
       this.formState = SUBMITTED;
+
+      // Build formdata
       let formData = new FormData();
       formData.append("data_file", this.dataFile);
       formData.append("trans_id", this.transactionID);
       formData.append("n_lsb", this.nBits);
-      formData.append("filename", this.encodeFilename);
-      formData.append("extension", this.encodeFileExt);
+      if (this.encodeFilename){
+        formData.append("filename", this.dataFile.name);
+      }
+      if (this.encodeFileExt){
+        formData.append("extension", this.dataFile.type);
+      }
+
+      // Post it
       axios
-        .post("/encode", formData, {
+        .post("/encode/complete", formData, {
           headers: {
             "Content-Type": "multipart/form-data"
           }
@@ -208,11 +243,13 @@ export default {
         });
     },
 
-    updateSpaceAvailable() {
+    updateSpace() {
+
+      // Build params
       var params = { trans_id: this.transactionID };
       if (this.dataFile) {
         var ext = path.extname(this.dataFile.name);
-        var filename = path.basename(this.dataFile, ext);
+        var filename = path.basename(this.dataFile.name, ext);
         if (this.encodeFilename) {
           params.filename = filename;
         }
@@ -224,10 +261,12 @@ export default {
         params.n_lsb = this.nBits;
       }
 
+      // Post it
       axios
         .get("/encode/space", { params })
         .then(response => {
-          this.estimatedSpace = response.data.space_available;
+          this.space = response.data.space_available;
+          this.validateForm();
         })
         .catch(error => {
           alert(error);
@@ -235,12 +274,10 @@ export default {
     },
 
     validateForm() {
-      if (
-        this.validInputImgFile &&
-        this.dataFile &&
-        this.nBits <= this.imgMeta.bitDepth
-      ) {
+      if (this.validInputImgFile && this.validDataFile) {
         this.formState = VALID;
+      } else {
+        this.formState = INVALID;
       }
     }
   }
