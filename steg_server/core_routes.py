@@ -153,11 +153,10 @@ def complete_encode():
     
     # Store the result
     write_img(enc_file_path, encoded_img)
-    
 
     # Hand off the result.  
     return jsonify({"trans_id": trans_id, "resp_code": 0,
-                    "resp_msg": 'Data encoded to image successfully.'})      
+                    "resp_msg": 'Data encoded to image successfully.'})    
 
 #####################################
 # Encoded File URL Generation Route #
@@ -176,8 +175,17 @@ def download_encode():
     # Obtain the path for the encoded image.
     enc_img_path_abs = form_enc_img_path(trans_id)[1]
     
+    # Obtain the filename with extension.
+    enc_img_path_parts = enc_img_path_abs.split(os.sep)
+    enc_img_filename = enc_img_path_parts[len(enc_img_path_parts)-1]
+    # Now obtain the file extension, taking the text after the last dot.
+    enc_img_filename_parts = enc_img_filename.split('.')
+    enc_img_ext = enc_img_filename_parts[len(enc_img_filename_parts)-1]
+    
+    return_filename = f'output.{enc_img_ext}'
+    
     # Send off the encoded file
-    return send_file(enc_img_path_abs)
+    return send_file(enc_img_path_abs, attachment_filename=return_filename, as_attachment=True)
  
 ###############################
 # Encode Files Deletion Route #
