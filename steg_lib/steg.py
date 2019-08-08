@@ -65,16 +65,18 @@ def space_available(img: numpy.ndarray, **flags) -> int:
     n_lsb = flags["n_lsb"] if "n_lsb" in flags else 1
     if n_lsb > 1: header_size += 8
 
+    if bitdepth < n_lsb:
+        raise ValueError("Number of LSB specified greater than bitdepth of image.")
+
     if "extension" in flags: subheader_size += 8 + (len(bytes(flags["extension"], "utf-8")) * 8)
     if "filename" in flags: subheader_size += 8 + (len(bytes(flags["filename"], "utf-8")) * 8)
     
-    indexes = width * height * channels # the number of bytes available
+    indexes = width * height * channels # the number of indexes available
 
     # Return in bytes. All applications of this function are working in bytes.
-    free_bytes = indexes - header_size - ciel_div(subheader_size, n_lsb)
-    usable_bits = free_bytes * n_lsb
-    usable_bytes = usable_bits // 8
-    return usable_bytes
+    free_indexes = indexes - header_size - ciel_div(subheader_size, n_lsb)
+    free_bytes = (free_indexes * n_lsb) // 8
+    return max(0, free_bytes)
 
 def ciel_div(a: int, b: int):
     """Returns the cieling integer division of a and b"""
