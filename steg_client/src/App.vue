@@ -69,6 +69,7 @@ body {
   height: 100vh;
   & div {
     background-size: cover;
+    background-position: center top;
     position: relative;
     height: 110%;
     width: 110%;
