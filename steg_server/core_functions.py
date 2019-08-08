@@ -16,13 +16,12 @@ import os, glob, json
 """ This section defines functions for code required more than
 once in the /encode, /space or /complete routes. """
 
-def reply_error_json(trans_id, resp_msg, resp_code=1, http_code=400):
+def reply_error_json(resp_msg, http_code=400):
     """Used to return json containing error information and HTTP exception
     in the event that a route encounters a problem."""
-    return jsonify({"trans_id": trans_id,
-                    "resp_code": resp_code,
-                    "resp_msg": resp_msg}), http_code
-def is_json(myjson):
+    return jsonify({"error_msg": resp_msg}), http_code
+
+  def is_json(myjson):
     try:
         json_object = json.loads(myjson)
     except:

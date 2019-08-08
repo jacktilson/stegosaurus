@@ -61,7 +61,7 @@ def upload_encode():
   
   # Obtain image from POST request.
   img_file = request.files.get('img_file', default=None)
-  if img_file is None: return reply_error_json(trans_id, 'Original image was not present in the POST request.')
+  if img_file is None: return reply_error_json('Original image was not present in the POST request.')
   
   # Test if temp folder has capacity for this.
   temp_dir_cap_test = validate_temp_dir(img_file)
@@ -69,7 +69,7 @@ def upload_encode():
   
   # Drop the image in relevant directory, retain path.
   img_abs_path = store_file_temp(trans_id, img_file, 'originals', 'orig')
-  if img_abs_path is None: reply_error_json(trans_id, 'The image file uploaded does not have an extension.')
+  if img_abs_path is None: reply_error_json('The image file uploaded does not have an extension.')
 
   # Grab information about the newly saved image.
   img_meta = get_img_meta(read_img(img_abs_path))
@@ -103,8 +103,7 @@ def space_encode():
     space = space_available(read_img(form_orig_img_path(trans_id)[1]), **flags_sa)
     
     # Hand back a JSON on success.
-    return jsonify({"trans_id": trans_id, "resp_code": 0, 
-                    "space_available": space})
+    return jsonify({"space_available": space})
     
 #####################################
 # Encoding User Flow Complete Route #
@@ -127,7 +126,7 @@ def complete_encode():
     
     # Obtain and validate the data file.
     data_file = request.files.get('data_file', default=None)
-    if data_file is None: return reply_error_json(trans_id, 'The data file was not received.')
+    if data_file is None: return reply_error_json('The data file was not received.')
 
     # Check whether temp dir can handle this data file.
     temp_dir_cap_test = validate_temp_dir(data_file)
@@ -155,8 +154,7 @@ def complete_encode():
     write_img(enc_file_path, encoded_img)
 
     # Hand off the result.  
-    return jsonify({"trans_id": trans_id, "resp_code": 0,
-                    "resp_msg": 'Data encoded to image successfully.'})    
+    return jsonify({"resp_msg": 'Data encoded to image successfully.'})    
 
 #####################################
 # Encoded File URL Generation Route #
@@ -211,8 +209,7 @@ def delete_encode():
     if data_file_path_abs is not None: os.remove(data_file_path_abs)
     if enc_img_path_abs is not None: os.remove(enc_img_path_abs)
       
-    return jsonify({"trans_id": trans_id, "resp_code": 0,
-                    "resp_msg": 'All encode transaction files deleted successfully.'})
+    return jsonify({"resp_msg": 'All encode transaction files deleted successfully.'})
   
   
 ##############################
@@ -224,7 +221,7 @@ def process_decode():
     
     # Obtain image from POST request.
     img_file = request.files.get('img_file', default=None)
-    if img_file is None: return reply_error_json('none', 'An image was not present in the POST request.')
+    if img_file is None: return reply_error_json('An image was not present in the POST request.')
     
     # Perform the decode.
     data, meta = decode_img(read_img_binary(img_file.read()))
