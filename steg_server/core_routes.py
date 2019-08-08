@@ -24,29 +24,6 @@ def home():
       return send_from_directory(os.path.join(app.static_folder, "client"), 'index.html')
     else:
       return send_from_directory(app.static_folder, 'bad_domain.html')
-
-
-##########################
-# File Upload Test Route #
-##########################
-
-@app.route('/filetest', methods = ['POST'])
-def filetest():
-  if request.method == 'POST':
-    f = request.files['file']
-    return send_file(BytesIO(f.read()),
-                    attachment_filename = 'file.bmp')
-  else:
-    return 'no request received'
-  
-  
-#######################################
-# Temp/Upload Files HTTP Access Route #
-#######################################
-
-@app.route('/temp/<path:filename>')
-def temp_access(filename):
-    return send_from_directory(app.config['CUSTOM_STATIC_PATH'], filename, conditional=True)
   
       
 ######################################
@@ -61,15 +38,15 @@ def upload_encode():
   
   # Obtain image from POST request.
   img_file = request.files.get('img_file', default=None)
-  if img_file is None: return reply_error_json(trans_id, 'Original image was not present in the POST request.')
+  if img_file is None: return reply_error_json('Original image was not present in the POST request.')
   
   # Test if temp folder has capacity for this.
-  temp_dir_cap_test = validate_temp_dir(img_file)
-  if temp_dir_cap_test != True: return temp_dir_cap_test
+  storage_test = validate_temp(img_file)
+  if storage_test != True: return storage_test
   
   # Drop the image in relevant directory, retain path.
   img_abs_path = store_file_temp(trans_id, img_file, 'originals', 'orig')
-  if img_abs_path is None: reply_error_json(trans_id, 'The image file uploaded does not have an extension.')
+  if img_abs_path is None: reply_error_json('The image file uploaded does not have an extension.')
 
   # Grab information about the newly saved image.
   img_meta = get_img_meta(read_img(img_abs_path))
@@ -99,12 +76,12 @@ def space_encode():
     if n_lsb_test != True: return n_lsb_test
     
     # Perform space analysis.
+    img_path = get_temp_path(trans_id, 'originals', 'orig')[1]
     flags_sa = build_flags(['filename', 'extension'], ['n_lsb'], request)
-    space = space_available(read_img(form_orig_img_path(trans_id)[1]), **flags_sa)
+    space = space_available(read_img(img_path), **flags_sa)
     
     # Hand back a JSON on success.
-    return jsonify({"trans_id": trans_id, "resp_code": 0, 
-                    "space_available": space})
+    return jsonify({"space_available": space})
     
 #####################################
 # Encoding User Flow Complete Route #
@@ -127,23 +104,24 @@ def complete_encode():
     
     # Obtain and validate the data file.
     data_file = request.files.get('data_file', default=None)
-    if data_file is None: return reply_error_json(trans_id, 'The data file was not received.')
+    if data_file is None: return reply_error_json('The data file was not received.')
 
     # Check whether temp dir can handle this data file.
-    temp_dir_cap_test = validate_temp_dir(data_file)
-    if temp_dir_cap_test != True: return temp_dir_cap_test
+    storage_test = validate_temp(data_file)
+    if storage_test != True: return storage_test
     
-    # Store the data file.
+    # Store the data file and retain its path.
     data_file_path = store_file_temp(trans_id, data_file, 'data', 'data')
     
     # Set the prospective destination file with extension.
-    enc_file_path = form_enc_img_path(trans_id, file_exits=False, file_ext=get_img_ext(trans_id))[1]
+    enc_img_path = get_temp_path(trans_id, 'encoded', 'encoded', file_exists=False, file_ext=get_img_ext(trans_id))[1]
 
     # Read the original image into bytes.
-    in_img = read_img(form_orig_img_path(trans_id)[1])
+    orig_img_path = get_temp_path(trans_id, 'originals', 'orig')[1]
+    in_img = read_img(orig_img_path)
     
     # Read the data file into bytes.
-    in_data = read_data_file_bytes(trans_id)
+    in_data = read_data_bytes(trans_id)
     
     # Process the encoding, feeding original image path, data file path and flags to encode function.
     flags_enc = build_flags(['filename', 'extension'], ['n_lsb'], request)
@@ -152,11 +130,10 @@ def complete_encode():
     encoded_img = encode(in_img, in_data, **flags_enc)
     
     # Store the result
-    write_img(enc_file_path, encoded_img)
+    write_img(enc_img_path, encoded_img)
 
     # Hand off the result.  
-    return jsonify({"trans_id": trans_id, "resp_code": 0,
-                    "resp_msg": 'Data encoded to image successfully.'})    
+    return jsonify({"resp_msg": 'Data encoded to image successfully.'})    
 
 #####################################
 # Encoded File URL Generation Route #
@@ -173,19 +150,16 @@ def download_encode():
     if trans_id_test != True: return trans_id_test
     
     # Obtain the path for the encoded image.
-    enc_img_path_abs = form_enc_img_path(trans_id)[1]
+    img_path = get_temp_path(trans_id, 'encoded', 'encoded')[1]
     
-    # Obtain the filename with extension.
-    enc_img_path_parts = enc_img_path_abs.split(os.sep)
-    enc_img_filename = enc_img_path_parts[len(enc_img_path_parts)-1]
-    # Now obtain the file extension, taking the text after the last dot.
-    enc_img_filename_parts = enc_img_filename.split('.')
-    enc_img_ext = enc_img_filename_parts[len(enc_img_filename_parts)-1]
+    # Obtain the file extension
+    img_ext = get_img_ext(trans_id)
     
-    return_filename = f'output.{enc_img_ext}'
+    # Form the filename of the response image.
+    return_filename = f'output.{img_ext}'
     
     # Send off the encoded file
-    return send_file(enc_img_path_abs, attachment_filename=return_filename, as_attachment=True)
+    return send_file(img_path, attachment_filename=return_filename, as_attachment=True)
  
 ###############################
 # Encode Files Deletion Route #
@@ -201,18 +175,17 @@ def delete_encode():
     trans_id_test = check_trans_id(trans_id, 'encoded')
     if trans_id_test != True: return trans_id_test
     
-    # Obtain the path for the encoded image.
-    orig_img_path_abs = form_orig_img_path(trans_id)[1]
-    data_file_path_abs = form_data_file_path(trans_id)[1]
-    enc_img_path_abs = form_enc_img_path(trans_id)[1]
+    # Obtain the paths for the transaction files.
+    orig_img_path = get_temp_path(trans_id, 'originals', 'orig')[1]
+    data_file_path = get_temp_path(trans_id, 'data', 'data')[1]
+    enc_img_path = get_temp_path(trans_id, 'encoded', 'encoded')[1]
     
     # Cycle though files to see if need to delete. Assuming if not found, can ignore.
-    if orig_img_path_abs is not None: os.remove(orig_img_path_abs)
-    if data_file_path_abs is not None: os.remove(data_file_path_abs)
-    if enc_img_path_abs is not None: os.remove(enc_img_path_abs)
+    if orig_img_path is not None: os.remove(orig_img_path)
+    if data_file_path is not None: os.remove(data_file_path)
+    if enc_img_path is not None: os.remove(enc_img_path)
       
-    return jsonify({"trans_id": trans_id, "resp_code": 0,
-                    "resp_msg": 'All encode transaction files deleted successfully.'})
+    return jsonify({"resp_msg": 'All encode transaction files deleted successfully.'})
   
   
 ##############################
@@ -224,7 +197,7 @@ def process_decode():
     
     # Obtain image from POST request.
     img_file = request.files.get('img_file', default=None)
-    if img_file is None: return reply_error_json('none', 'An image was not present in the POST request.')
+    if img_file is None: return reply_error_json('An image was not present in the POST request.')
     
     # Perform the decode.
     data, meta = decode_img(read_img_binary(img_file.read()))
