@@ -1,6 +1,6 @@
 import os, numpy, cv2, bitarray, pathlib
 from itertools import product, islice
-from typing import Iterable, Tuple, Dict
+from typing import Iterable, Tuple, Dict, NewType
 
 
 # Magic flag numbers
@@ -8,12 +8,28 @@ LSB = 1
 EXT = 2
 NAME = 4
 
+# Type aliases
+ImgIndex = Tuple[int]
+Img = NewType("Img", numpy.ndarray)
+Bits = NewType("Bits", bitarray.bitarray)
+
 ##################
 # util functions #
 ##################
 
 
-def read_img(img_filepath: str) -> numpy.ndarray:
+def read_img(img_filepath: str) -> Img:
+    """
+    Reads an image from a file into the opencv numpy format. (Accepts .bmp and .png)
+
+    :param img_filepath: The filepath of the image to be read
+    :type img_filepath: str
+    :raises ValueError: When there is an invalid filepath
+    :raises ValueError: When there is an invalid extension
+    :raises ValueError: When the file is unreadable (garbage)
+    :return: Returns the image as a numpy array
+    :rtype: Img
+    """
     # raise error if bad filepath is given
     if not os.path.isfile(img_filepath): raise ValueError(f"File path given is not valid. ({img_filepath})")
 
@@ -30,7 +46,16 @@ def read_img(img_filepath: str) -> numpy.ndarray:
     return img
 
 
-def read_img_binary(bin_img: bytes) -> numpy.ndarray:
+def read_img_binary(bin_img: bytes) -> Img:
+    """
+    Reads an image from memory into the opencv numpy array format
+
+    :param bin_img: The encoded bytes of the image to be interpreted
+    :type bin_img: bytes
+    :raises ValueError: When the bytes are unreadable (garbage)
+    :return: Returns the image as a numpy array
+    :rtype: Img
+    """
 
     # convert from bytes to numpy buffer required by imdecode
     data = numpy.frombuffer(bin_img, numpy.uint8)
@@ -39,28 +64,82 @@ def read_img_binary(bin_img: bytes) -> numpy.ndarray:
     img = cv2.imdecode(data, flags=cv2.IMREAD_UNCHANGED)
 
     # raise error if image could not be read
-    if img is None: raise(ValueError(f"The data could not be read. Is it an image?"))
+    if img is None: raise ValueError(f"The data could not be read. Is it an image?")
     return img
 
-def write_img(img_filepath: str, img: numpy.ndarray):
+
+def write_img(img_filepath: str, img: Img):
+    """
+    Writes a opencv numpy array image to the filepath given.
+    
+    :param img_filepath: The filepath to be written to.
+    :type img_filepath: str
+    :param img: The image to be written as a numpy array.
+    :type img: Img
+    """
+
     cv2.imwrite(img_filepath, img)
 
-def string_to_bitarray(text: str) -> bitarray.bitarray:
+
+def bytes_to_string(data: bytes) -> str:
+    """
+    Converts a bytes object to a string using utf-8 encoding
+
+    :type data: bytes
+    :rtype: str
+    """
+
+    return data.decode("utf-8")
+
+
+def string_to_bitarray(text: str) -> Bits:
+    """
+    Converts a string to an array of bits (utf-8 encoding)
+    
+    :type text: str
+    :rtype: Bits
+    """
+
     return bytes_to_bitarray(bytes(text, "utf-8"))
 
 
-def bytes_to_bitarray(data: bytes) -> bitarray.bitarray:
+def bytes_to_bitarray(data: bytes) -> Bits:
+    """
+    Converts bytes to an array of bits.
+    
+    :type data: bytes
+    :rtype: Bits
+    """
+
     bits = bitarray.bitarray(endian="little")
     bits.frombytes(data)
     return bits
 
-def get_img_meta(img: numpy.ndarray) -> Tuple:
+
+def get_img_meta(img: Img) -> Tuple:
+    """
+    Returns the width, height, channels and bitdepth of an image in opencv numpy format
+    
+    :type img: Img
+    :rtype: Tuple
+    """
+
     return (*img.shape, img.dtype.itemsize * 8) if len(img.shape) == 3 else (*img.shape, 1, img.dtype.itemsize * 8)
 
-def space_available(img: numpy.ndarray, **flags) -> int:
+
+def space_available(img: Img, **flags) -> int:
+    """
+    [summary]
+    
+    :param img: [description]
+    :type img: Img
+    :raises ValueError: [description]
+    :return: [description]
+    :rtype: int
+    """
     width, height, channels, bitdepth = get_img_meta(img)
 
-    header_size = 8 # encoded at 1LSB. Measured in bits. 8 initialy because of the flag byte
+    header_size = 8 # encoded at 1LSB. Measured in bits. 8 initi aly because of the flag byte
     subheader_size = 32 # Measured in bits. Everything encoded at n_lsb
     n_lsb = flags["n_lsb"] if "n_lsb" in flags else 1
     if n_lsb > 1: header_size += 8
@@ -87,7 +166,7 @@ def ciel_div(a: int, b: int):
 # main functions #
 ##################
 
-def encode(img: numpy.ndarray, data: bytes, **flags) -> numpy.ndarray:
+def encode(img: Img, data: bytes, **flags) -> Img:
     """
     Encodes binary data and header onto the least significant bits of colour channels in an image.
     :param img: The image in numpy array format.
@@ -123,7 +202,7 @@ def encode(img: numpy.ndarray, data: bytes, **flags) -> numpy.ndarray:
 
     return img
 
-def write_data_frame(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data: bytes, size_byte_length: int=1):
+def write_data_frame(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, data: bytes, size_byte_length: int=1):
     """
     Writes a frame of data to the image. First encodes the length and then encodes the data onto the image.
     :param img: The image in numpy array format.
@@ -134,21 +213,13 @@ def write_data_frame(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, d
     write_int(img, indexes, n_lsb=n_lsb, data=len(data), byte_length=size_byte_length)
     write_bytes(img, indexes, n_lsb=n_lsb, data=data)
 
-def write_int(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data: int, byte_length: int):
-    write_bits(
-        img,
-        islice(indexes, ciel_div(byte_length * 8, n_lsb)),
-        n_lsb,
-        bytes_to_bitarray(data.to_bytes(byte_length, byteorder="little")))
+def write_int(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, data: int, byte_length: int):
+    write_bits(img, indexes, n_lsb, bytes_to_bitarray(data.to_bytes(byte_length, byteorder="little")))
 
-def write_bytes(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data: bytes):
-    write_bits(
-        img,
-        islice(indexes, ciel_div(len(data) * 8, n_lsb)),
-        n_lsb,
-        bytes_to_bitarray(data))
+def write_bytes(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, data: bytes):
+    write_bits(img, indexes, n_lsb, bytes_to_bitarray(data))
 
-def write_bits(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data: bitarray.bitarray):
+def write_bits(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, data: Bits):
     """
     Writes chunked bits of data to the least significant bit of an image.
     :param img: Numpy Array of image data.
@@ -169,13 +240,13 @@ def write_bits(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, data: b
     # calculate the bit mask to erase least significant bits on each pixel channel so they can be overwritten.
     mask = ((2 ** bit_depth) - 1) - ((2 ** (n_lsb)) - 1)  # e.g. 10111010 AND 11111100 (mask) = 10111000
 
-    for index, d in zip(indexes, chunked_data):
+    for index, d in zip(islice(indexes, ciel_div(data.length(), n_lsb)), chunked_data):
         colour = img.item(*index)
         encoded = (colour & mask) | int.from_bytes(d.tobytes(), byteorder="little")
         img.itemset(*index, encoded)
 
 
-def decode_img(img: numpy.ndarray) -> Tuple[bytes, Dict[str, str]]:
+def decode_img(img: Img) -> Tuple[bytes, Dict[str, str]]:
     """
     Decodes data stored in an image.
     :param img: The image data has been stored in.
@@ -187,24 +258,29 @@ def decode_img(img: numpy.ndarray) -> Tuple[bytes, Dict[str, str]]:
     meta = dict()  # meta object to store header data
 
     # read header data
-    flags = read_int(img, indexes, 1, 8)    
-    n_lsb = read_int(img, indexes, 1, 8) if flags & LSB else 1
-    if flags & EXT: meta["extension"] = read_str(img, indexes, n_lsb, read_int(img, indexes, n_lsb, 8) * 8)
-    if flags & NAME: meta["filename"] = read_str(img, indexes, n_lsb, read_int(img, indexes, n_lsb, 8) * 8)
+    flags = read_int(img, indexes, 1, 1)    
+    n_lsb = read_int(img, indexes, 1, 1) if flags & LSB else 1
+    if flags & EXT: meta["extension"] = bytes_to_string(read_data_frame(img, indexes, n_lsb, 1))
+    if flags & NAME: meta["filename"] = bytes_to_string(read_data_frame(img, indexes, n_lsb, 1))
 
     # read data
-    data_len = read_int(img, indexes, n_lsb, 32)
-    data = read_bits(img, islice(indexes, ciel_div(data_len * 8, n_lsb)), n_lsb, data_len * 8).tobytes()
+    data = read_data_frame(img, indexes, n_lsb, 4)
 
     return data, meta
 
-def read_str(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, bit_length: int) -> str:
-    return read_bits(img, islice(indexes, ciel_div(bit_length, n_lsb)), n_lsb, bit_length).tobytes().decode("utf-8")
+def read_data_frame(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, size_byte_length: int=1) -> bytes:
+    return read_bytes(img, indexes, n_lsb, byte_length=read_int(img, indexes, n_lsb, byte_length=size_byte_length))    
 
-def read_int(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, bit_length: int) -> int:
-    return int.from_bytes(read_bits(img, islice(indexes, ciel_div(bit_length, n_lsb)), n_lsb, bit_length).tobytes(), byteorder="little")
+def read_str(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, byte_length: int) -> str:
+    return read_bytes(img, indexes, n_lsb, byte_length).decode("utf-8")
 
-def read_bits(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, bit_length: int) -> bitarray:
+def read_int(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, byte_length: int) -> int:
+    return int.from_bytes(read_bytes(img, indexes, n_lsb, byte_length), byteorder="little")
+
+def read_bytes(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, byte_length: int) -> bytes:
+    return read_bits(img, indexes, n_lsb, byte_length * 8).tobytes()
+
+def read_bits(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, bit_length: int) -> bitarray:
     """
     Reads the least significant bits of image channels and returns them as a continuous bitarray
     :param img: The image to extract from.
@@ -232,6 +308,13 @@ def read_bits(img: numpy.ndarray, indexes: Iterable[Tuple], n_lsb: int, bit_leng
     for index in islice(indexes, ciel_div(bit_length, n_lsb)):
         chunk = bitarray.bitarray(endian="little")
         chunk.frombytes((img.item(*index) & mask).to_bytes(bytes_size, byteorder="little"))
-        data += chunk[:(n_lsb if total + n_lsb <= bit_length else bit_length - total)]
-        total += n_lsb
+        chunk_length = (n_lsb if total + n_lsb <= bit_length else bit_length - total)
+        data += chunk[:chunk_length]
+        total += chunk_length
+
+    # check that the length of the extracted data is what was specified. If not then their were not enough indexes in
+    # the image.
+    if total < bit_length:
+        raise ValueError("Ran out of indexes at which to extract data.")
+
     return data
