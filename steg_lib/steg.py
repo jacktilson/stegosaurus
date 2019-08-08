@@ -71,7 +71,7 @@ def space_available(img: numpy.ndarray, **flags) -> int:
     indexes = width * height * channels # the number of bytes available
 
     # Return in bytes. All applications of this function are working in bytes.
-    free_bytes = indexes - (header_size // 8) - (subheader_size // 8)
+    free_bytes = indexes - header_size - ciel_div(subheader_size, n_lsb)
     usable_bits = free_bytes * n_lsb
     usable_bytes = usable_bits // 8
     return usable_bytes
