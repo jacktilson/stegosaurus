@@ -81,7 +81,7 @@
             b-card-text Waiting for a result...
           b-collapse(v-model="showResult")
             b-card-text Download your file below
-            b-button Download
+            b-button(v-on:click="downloadResult()" :disabled='!enableSubmit') Download
 </template>
 <script>
 import axios from "axios";
