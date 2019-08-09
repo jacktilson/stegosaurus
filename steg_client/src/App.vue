@@ -61,6 +61,7 @@ body {
 #background {
   background-color: transparent;
   overflow: hidden;
+  position: fixed;
 }
 
 .layer {
