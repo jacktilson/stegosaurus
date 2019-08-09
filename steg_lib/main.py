@@ -1,6 +1,7 @@
 import argparse
 import pathlib
 import steg
+import base64
 
 
 def cmd_encode_string(args):
@@ -23,14 +24,14 @@ def cmd_encode_file(args):
     if args.enc_extension:
         flags["extension"] = path.suffix[1:]
     if args.encrypt:
-        flags["encrypt"] = args.encrypt
+        flags["encrypt"] = base64.b64encode(str.encode(args.encrypt))
 
     steg.write_img(args.outfile, steg.encode(img, data, **flags))
 
 
 def cmd_decode(args):
     img = steg.read_img(args.imgfile)
-    data, meta = steg.decode_img(img, args.encrypt)
+    data, meta = steg.decode_img(img, base64.b64encode(str.encode(args.encrypt)))
     filename = meta["filename"] if "filename" in meta else "output"
     ext = f".{meta['extension']}" if "extension" in meta else ""
     with open(f"{args.o}{filename}{ext}", "wb+") as file:
