@@ -59,7 +59,12 @@ export default {
           responseType: "arraybuffer"
         })
         .then(function(response) {
-          saveAs(new Blob([response.data]), /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).groups.filename);
+          saveAs(
+            new Blob([response.data]),
+            /filename=(?<filename>.*)$/g.exec(
+              response.headers["content-disposition"]
+            ).groups.filename
+          );
         })
         .catch(function(error) {
           alert(error);

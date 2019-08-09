@@ -36,7 +36,7 @@ body {
 }
 
 .text-col-brand {
-  color: #3F7F3F;
+  color: #3f7f3f;
 }
 
 .card {

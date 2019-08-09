@@ -35,7 +35,8 @@ def read_img(img_filepath: str) -> Img:
 
     # raise error if unsupported filetype
     extension = pathlib.Path(img_filepath).suffix[1:].lower() #get the file extension of the file
-    if not extension in ("bmp", "png"): raise ValueError(f"Extension '{extension}' is not an a supported type'")
+    if not extension in ("bmp", "dib", "jpeg", "jpg", "jpe", "jp2", "png", "webp", "pbm", "pgm", "ppm", "sr", "ras", "tiff", "tif"):
+      raise ValueError(f"Extension '{extension}' is not an a supported type'")
 
     # try and read the image
     img = cv2.imread(img_filepath, flags=cv2.IMREAD_UNCHANGED)
@@ -77,7 +78,6 @@ def write_img(img_filepath: str, img: Img):
     :param img: The image to be written as a numpy array.
     :type img: Img
     """
-
     cv2.imwrite(img_filepath, img)
 
 

@@ -97,9 +97,8 @@
 <script>
 import axios from "axios";
 import path from "path";
-import { saveAs } from 'file-saver';
-import { ScalingSquaresSpinner  } from 'epic-spinners';
-
+import { saveAs } from "file-saver";
+import { ScalingSquaresSpinner } from "epic-spinners";
 
 let INVALID = 0;
 let VALID = 1;
@@ -108,7 +107,7 @@ let RESULT = 3;
 
 export default {
   name: "Encode",
-  components: {ScalingSquaresSpinner},
+  components: { ScalingSquaresSpinner },
   data() {
     return {
       formState: INVALID,
@@ -126,7 +125,7 @@ export default {
       encodeFileExt: false,
       trans_id: "",
       space: 0,
-      imgInfoWaiting: true,
+      imgInfoWaiting: true
     };
   },
   computed: {
@@ -186,7 +185,7 @@ export default {
   watch: {
     imgFile(val, oldval) {
       if (this.validImgFile) {
-        this.imgInfoWaiting = true
+        this.imgInfoWaiting = true;
 
         // check the input actually has a valid file in it
         let reader = new FileReader(); // File reader object for converting file to base64
@@ -194,7 +193,6 @@ export default {
           this.imgFileDataString = event.target.result;
         };
         reader.readAsDataURL(this.imgFile); // Start the reader, calls above function on completion
-      
 
         //also trigger upload of file to server
         let formData = new FormData();
@@ -243,7 +241,10 @@ export default {
       var extension = path.extname(this.dataFile.name);
       var filename = path.basename(this.dataFile.name, extension);
       if (this.encodeFileExt) {
-        formData.append("extension", extension.slice(extension.length>0?1:0));
+        formData.append(
+          "extension",
+          extension.slice(extension.length > 0 ? 1 : 0)
+        );
       }
       if (this.encodeFilename) {
         formData.append("filename", filename);
@@ -266,21 +267,26 @@ export default {
     },
 
     downloadResult() {
-      axios.get("/encode/download", {
-        params: {
-          trans_id: this.trans_id
-        },
-        responseType: "arraybuffer"
-      }).then(response => {
-        let filename = /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).groups.filename;
-        saveAs(new Blob([response.data]), filename);
-      }).catch(error => {
-        alert(error);
-      });
+      axios
+        .get("/encode/download", {
+          params: {
+            trans_id: this.trans_id
+          },
+          responseType: "arraybuffer"
+        })
+        .then(response => {
+          let filename = /filename=(?<filename>.*)$/g.exec(
+            response.headers["content-disposition"]
+          ).groups.filename;
+          saveAs(new Blob([response.data]), filename);
+        })
+        .catch(error => {
+          alert(error);
+        });
     },
 
     updateSpace() {
-      this.imgInfoWaiting = true
+      this.imgInfoWaiting = true;
 
       // Build params for space request
       var params = { trans_id: this.trans_id };
@@ -291,7 +297,7 @@ export default {
           params.filename = filename;
         }
         if (this.encodeFileExt) {
-          params.extension = ext.slice(ext.length>0?1:0); // remove the dot from the extension
+          params.extension = ext.slice(ext.length > 0 ? 1 : 0); // remove the dot from the extension
         }
       }
       if (this.nBits > 1) {
@@ -303,7 +309,7 @@ export default {
         .get("/encode/space", { params })
         .then(response => {
           this.space = response.data.space_available;
-          this.imgInfoWaiting = false
+          this.imgInfoWaiting = false;
           this.validateForm();
         })
         .catch(error => {
