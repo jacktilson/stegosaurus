@@ -1,6 +1,6 @@
 <template lang="pug">
   #app
-    #background
+    #background(data-origin-y="1.0")
       .layer(data-depth="0.025")
         .layer-6
       .layer(data-depth="0.05")
@@ -36,12 +36,13 @@ body {
 }
 
 .text-col-brand {
-  color: #3F7F3F;
+  color: #3f7f3f;
 }
 
 .card {
   background: rgba(31, 31, 31, 0.8);
 }
+
 .btn {
   border: 1px solid rgb(63, 127, 63);
   background-color: rgb(63, 127, 63);
@@ -65,7 +66,8 @@ body {
 
 #background {
   background-color: transparent;
-  overflow-x: hidden;
+  overflow: hidden;
+  position: fixed;
 }
 
 .layer {
