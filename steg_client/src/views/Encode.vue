@@ -49,7 +49,6 @@
                           animation-duration="1024"
                           size="64"
                           color="#3F7F3F")
-
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
