@@ -115,15 +115,15 @@ export default {
       imgFile: null,
       imgFileDataString: "",
       imgMeta: {
-        width: "0",
-        height: 0,
-        channels: 0,
-        bitDepth: 0
+        width: "Calculating...",
+        height: "Calculating...",
+        channels: "Calculating...",
+        bitDepth: "Calculating..."
       },
       encodeFilename: false,
       encodeFileExt: false,
       trans_id: "",
-      space: 0,
+      space: "Calculating...",
       imgInfoWaiting: true,
     };
   },
