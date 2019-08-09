@@ -60,7 +60,7 @@ body {
 
 #background {
   background-color: transparent;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .layer {
