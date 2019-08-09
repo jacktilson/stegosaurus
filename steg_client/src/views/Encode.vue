@@ -8,7 +8,7 @@
             |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
             | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
             | channel with the data to be hidden, changing the actual value by the smallest amount.
-        b-card.mt-3
+        b-card.my-3
           b-collapse(v-model="showForm")
             form
               b-form-group(
@@ -31,24 +31,28 @@
                     b-col(lg="6")
                       b-card-img(:src="imgFileDataString").rounded-0
                     b-col(lg="6")
-                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`" v-show="!imgInfoWaiting")
-                        b-row
-                          b-col(md="auto")
-                            b-card-text Width: {{imgMeta.width}}
-                          b-col(md="auto")
-                            b-card-text Height: {{imgMeta.height}}
-                          b-col(md="auto")
-                            b-card-text Channels: {{imgMeta.channels}}
-                          b-col(md="auto")
-                            b-card-text Bit Depth: {{imgMeta.bitDepth}}
-                          b-col(md="auto")
-                            b-card-text Estimated Space: {{space}} Bytes
-                      b-card-body(v-show="imgInfoWaiting" title="Getting image info...")
-                        scaling-squares-spinner.mx-auto.my-auto(
-                          v-show="imgInfoWaiting"
-                          animation-duration="1024"
-                          size="64"
-                          color="#3F7F3F")
+                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
+                        div(v-show="!imageUploading")
+                          b-card-sub-title Image Info
+                          b-row
+                            b-col(md="auto")
+                              b-card-text Width: {{imgMeta.width}}
+                            b-col(md="auto")
+                              b-card-text Height: {{imgMeta.height}}
+                            b-col(md="auto")
+                              b-card-text Channels: {{imgMeta.channels}}
+                            b-col(md="auto")
+                              b-card-text Bit Depth: {{imgMeta.bitDepth}}
+                        div(v-show="!spaceWaiting")
+                          b-row
+                            b-col(md="auto")
+                              b-card-text Estimated Space: {{space}} Bytes
+                        div(v-show="imageUploading || spaceWaiting").pt-5
+                          scaling-squares-spinner.mx-auto(
+                            animation-duration="1024"
+                            size="64"
+                            color="#3F7F3F")
+                          b-card-text.text-center Loading...
 
               b-collapse(v-model="showDataInput")
                 b-form-group(
@@ -91,15 +95,14 @@
             scaling-squares-spinner(animation-duration="1024" size="128" color="#3F7F3F").mx-auto.my-4
             b-card-title.text-center Encoding Your Data...
           b-collapse(v-model="showResult")
-            b-card-text Download your file below
-            b-button(v-on:click="downloadResult()" :disabled='!enableSubmit') Download
+            b-card-title Download your file below
+            b-button(v-on:click="downloadResult") Download
 </template>
 <script>
 import axios from "axios";
 import path from "path";
-import { saveAs } from 'file-saver';
-import { ScalingSquaresSpinner  } from 'epic-spinners';
-
+import { saveAs } from "file-saver";
+import { ScalingSquaresSpinner } from "epic-spinners";
 
 let INVALID = 0;
 let VALID = 1;
@@ -108,7 +111,7 @@ let RESULT = 3;
 
 export default {
   name: "Encode",
-  components: {ScalingSquaresSpinner},
+  components: { ScalingSquaresSpinner },
   data() {
     return {
       formState: INVALID,
@@ -126,7 +129,8 @@ export default {
       encodeFileExt: false,
       trans_id: "",
       space: 0,
-      imgInfoWaiting: true,
+      imageUploading: false,
+      spaceWaiting: false
     };
   },
   computed: {
@@ -151,7 +155,7 @@ export default {
       return Boolean(this.dataFile) && this.dataFile.size <= this.space;
     },
     feedbackValidDataFile() {
-      return this.validDataFile ? "Awesome" : "";
+      return this.validDataFile ? "Awesome!" : "";
     },
     feedbackInvalidDataFile() {
       if (this.dataFile) {
@@ -186,7 +190,8 @@ export default {
   watch: {
     imgFile(val, oldval) {
       if (this.validImgFile) {
-        this.imgInfoWaiting = true
+        this.imageUploading = true
+        this.spaceWaiting = true
 
         // check the input actually has a valid file in it
         let reader = new FileReader(); // File reader object for converting file to base64
@@ -194,11 +199,11 @@ export default {
           this.imgFileDataString = event.target.result;
         };
         reader.readAsDataURL(this.imgFile); // Start the reader, calls above function on completion
-      
 
         //also trigger upload of file to server
         let formData = new FormData();
         formData.append("img_file", this.imgFile);
+
         axios
           .post("/encode/upload", formData, {
             headers: {
@@ -211,6 +216,7 @@ export default {
             this.imgMeta.height = response.data.height;
             this.imgMeta.channels = response.data.channels;
             this.imgMeta.bitDepth = response.data.bitdepth;
+            this.imageUploading = false;
             this.updateSpace();
           })
           .catch(error => {
@@ -243,7 +249,10 @@ export default {
       var extension = path.extname(this.dataFile.name);
       var filename = path.basename(this.dataFile.name, extension);
       if (this.encodeFileExt) {
-        formData.append("extension", extension.slice(extension.length>0?1:0));
+        formData.append(
+          "extension",
+          extension.slice(extension.length > 0 ? 1 : 0)
+        );
       }
       if (this.encodeFilename) {
         formData.append("filename", filename);
@@ -258,7 +267,6 @@ export default {
         })
         .then(response => {
           this.formState = RESULT;
-          this.downloadResult();
         })
         .catch(error => {
           alert(error);
@@ -266,21 +274,27 @@ export default {
     },
 
     downloadResult() {
-      axios.get("/encode/download", {
-        params: {
-          trans_id: this.trans_id
-        },
-        responseType: "arraybuffer"
-      }).then(response => {
-        let filename = /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).groups.filename;
-        saveAs(new Blob([response.data]), filename);
-      }).catch(error => {
-        alert(error);
-      });
+      axios
+        .get("/encode/download", {
+          params: {
+            trans_id: this.trans_id
+          },
+          responseType: "arraybuffer"
+        })
+        .then(response => {
+          
+          let filename = /filename=(?<filename>.*)$/g.exec(
+            response.headers["content-disposition"]
+          ).groups.filename;
+          saveAs(new Blob([response.data]), filename);
+        })
+        .catch(error => {
+          alert(error);
+        });
     },
 
     updateSpace() {
-      this.imgInfoWaiting = true
+      this.spaceWaiting = true;
 
       // Build params for space request
       var params = { trans_id: this.trans_id };
@@ -291,19 +305,22 @@ export default {
           params.filename = filename;
         }
         if (this.encodeFileExt) {
-          params.extension = ext.slice(ext.length>0?1:0); // remove the dot from the extension
+          params.extension = ext.slice(ext.length > 0 ? 1 : 0); // remove the dot from the extension
         }
       }
       if (this.nBits > 1) {
         params.n_lsb = this.nBits;
       }
 
+
+
       // Post it
       axios
         .get("/encode/space", { params })
         .then(response => {
           this.space = response.data.space_available;
-          this.imgInfoWaiting = false
+          this.imgInfoWaiting = false;
+          this.spaceWaiting = false;
           this.validateForm();
         })
         .catch(error => {
@@ -323,4 +340,3 @@ export default {
   }
 };
 </script>
-<style lang="scss"></style>
