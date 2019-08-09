@@ -31,7 +31,8 @@ def cmd_encode_file(args):
 
 def cmd_decode(args):
     img = steg.read_img(args.imgfile)
-    data, meta = steg.decode_img(img, base64.b64encode(str.encode(args.encrypt)))
+    if args.encrypt: data, meta = steg.decode_img(img, base64.b64encode(str.encode(args.encrypt)))
+    else : data, meta = steg.decode_img(img)
     filename = meta["filename"] if "filename" in meta else "output"
     ext = f".{meta['extension']}" if "extension" in meta else ""
     with open(f"{args.o}{filename}{ext}", "wb+") as file:
