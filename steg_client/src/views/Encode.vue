@@ -31,15 +31,25 @@
                     b-col(lg="6")
                       b-card-img(:src="imgFileDataString").rounded-0
                     b-col(lg="6")
-                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
+                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`" v-show="!imgInfoWaiting")
                         b-row
                           b-col(md="auto")
-                            b-card-text Dimensions: {{imgMeta.width}} x {{imgMeta.height}}
+                            b-card-text Width: {{imgMeta.width}}
+                          b-col(md="auto")
+                            b-card-text Height: {{imgMeta.height}}
                           b-col(md="auto")
                             b-card-text Channels: {{imgMeta.channels}}
                           b-col(md="auto")
                             b-card-text Bit Depth: {{imgMeta.bitDepth}}
-                        b-card-text Estimated Space: {{space}} Bytes
+                          b-col(md="auto")
+                            b-card-text Estimated Space: {{space}} Bytes
+                      b-card-body(v-show="imgInfoWaiting" title="Getting image info...")
+                        scaling-squares-spinner.mx-auto.my-auto(
+                          v-show="imgInfoWaiting"
+                          animation-duration="1024"
+                          size="64"
+                          color="#3F7F3F")
+
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
@@ -73,12 +83,13 @@
                       :max="imgMeta.bitDepth" 
                       v-model="nBits")
                   b-form-group
-                    b-form-checkbox(v-model="encodeFilename" ) Encode filename
+                    b-form-checkbox(v-model="encodeFilename" ) Encode data file name
                   b-form-group
-                    b-form-checkbox(v-model="encodeFileExt" ) Encode file extension
+                    b-form-checkbox(v-model="encodeFileExt" ) Encode data file extension
               b-button(v-on:click="submit" :disabled='!enableSubmit') Encode
           b-collapse(v-model="showWaiting")
-            b-card-text Waiting for a result...
+            scaling-squares-spinner(animation-duration="1024" size="128" color="#3F7F3F").mx-auto.my-4
+            b-card-title.text-center Encoding Your Data...
           b-collapse(v-model="showResult")
             b-card-text Download your file below
             b-button(v-on:click="downloadResult()" :disabled='!enableSubmit') Download
@@ -86,7 +97,8 @@
 <script>
 import axios from "axios";
 import path from "path";
-import { saveAs } from 'file-saver';
+import { saveAs } from "file-saver";
+import { ScalingSquaresSpinner } from "epic-spinners";
 
 let INVALID = 0;
 let VALID = 1;
@@ -95,6 +107,7 @@ let RESULT = 3;
 
 export default {
   name: "Encode",
+  components: { ScalingSquaresSpinner },
   data() {
     return {
       formState: INVALID,
@@ -111,7 +124,8 @@ export default {
       encodeFilename: false,
       encodeFileExt: false,
       trans_id: "",
-      space: 0
+      space: 0,
+      imgInfoWaiting: true
     };
   },
   computed: {
@@ -171,34 +185,36 @@ export default {
   watch: {
     imgFile(val, oldval) {
       if (this.validImgFile) {
+        this.imgInfoWaiting = true;
+
         // check the input actually has a valid file in it
         let reader = new FileReader(); // File reader object for converting file to base64
         reader.onload = event => {
           this.imgFileDataString = event.target.result;
         };
         reader.readAsDataURL(this.imgFile); // Start the reader, calls above function on completion
-      }
 
-      //also trigger upload of file to server
-      let formData = new FormData();
-      formData.append("img_file", this.imgFile);
-      axios
-        .post("/encode/upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
-        })
-        .then(response => {
-          this.trans_id = response.data.trans_id;
-          this.imgMeta.width = response.data.width;
-          this.imgMeta.height = response.data.height;
-          this.imgMeta.channels = response.data.channels;
-          this.imgMeta.bitDepth = response.data.bitdepth;
-          this.updateSpace();
-        })
-        .catch(error => {
-          alert(error);
-        });
+        //also trigger upload of file to server
+        let formData = new FormData();
+        formData.append("img_file", this.imgFile);
+        axios
+          .post("/encode/upload", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+          .then(response => {
+            this.trans_id = response.data.trans_id;
+            this.imgMeta.width = response.data.width;
+            this.imgMeta.height = response.data.height;
+            this.imgMeta.channels = response.data.channels;
+            this.imgMeta.bitDepth = response.data.bitdepth;
+            this.updateSpace();
+          })
+          .catch(error => {
+            alert(error);
+          });
+      }
     },
     dataFile(val, oldval) {
       this.updateSpace();
@@ -225,7 +241,10 @@ export default {
       var extension = path.extname(this.dataFile.name);
       var filename = path.basename(this.dataFile.name, extension);
       if (this.encodeFileExt) {
-        formData.append("extension", extension);
+        formData.append(
+          "extension",
+          extension.slice(extension.length > 0 ? 1 : 0)
+        );
       }
       if (this.encodeFilename) {
         formData.append("filename", filename);
@@ -248,21 +267,28 @@ export default {
     },
 
     downloadResult() {
-      axios.get("/encode/download", {
-        params: {
-          trans_id: this.trans_id
-        },
-        responseType: "arraybuffer"
-      }).then(response => {
-        let filename = /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).groups.filename;
-        saveAs(new Blob([response.data]), filename);
-      }).catch(error => {
-        alert(error);
-      });
+      axios
+        .get("/encode/download", {
+          params: {
+            trans_id: this.trans_id
+          },
+          responseType: "arraybuffer"
+        })
+        .then(response => {
+          let filename = /filename=(?<filename>.*)$/g.exec(
+            response.headers["content-disposition"]
+          ).groups.filename;
+          saveAs(new Blob([response.data]), filename);
+        })
+        .catch(error => {
+          alert(error);
+        });
     },
 
     updateSpace() {
-      // Build params
+      this.imgInfoWaiting = true;
+
+      // Build params for space request
       var params = { trans_id: this.trans_id };
       if (this.dataFile) {
         var ext = path.extname(this.dataFile.name);
@@ -271,7 +297,7 @@ export default {
           params.filename = filename;
         }
         if (this.encodeFileExt) {
-          params.extension = ext;
+          params.extension = ext.slice(ext.length > 0 ? 1 : 0); // remove the dot from the extension
         }
       }
       if (this.nBits > 1) {
@@ -283,6 +309,7 @@ export default {
         .get("/encode/space", { params })
         .then(response => {
           this.space = response.data.space_available;
+          this.imgInfoWaiting = false;
           this.validateForm();
         })
         .catch(error => {
@@ -303,4 +330,3 @@ export default {
 };
 </script>
 <style lang="scss"></style>
-d
