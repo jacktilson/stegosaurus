@@ -22,13 +22,15 @@ def cmd_encode_file(args):
         flags["filename"] = path.stem
     if args.enc_extension:
         flags["extension"] = path.suffix[1:]
+    if args.encrypt:
+        flags["encrypt"] = args.encrypt
 
     steg.write_img(args.outfile, steg.encode(img, data, **flags))
 
 
 def cmd_decode(args):
     img = steg.read_img(args.imgfile)
-    data, meta = steg.decode_img(img)
+    data, meta = steg.decode_img(img, args.encrypt)
     filename = meta["filename"] if "filename" in meta else "output"
     ext = f".{meta['extension']}" if "extension" in meta else ""
     with open(f"{args.o}{filename}{ext}", "wb+") as file:
@@ -60,6 +62,7 @@ if __name__ == "__main__":
                                     help="Number of bits to encode on each channel")
     file_encode_parser.add_argument("-enc_extension", action="store_true", help="Encode the extension in the image.")
     file_encode_parser.add_argument("-enc_filename", action="store_true", help="Encode the filename in the image.")
+    file_encode_parser.add_argument("-encrypt", action="store", type=str, help="Encrypt the data")
     file_encode_parser.set_defaults(func=cmd_encode_file)
 
     # Parser for decode command
@@ -67,6 +70,7 @@ if __name__ == "__main__":
     decode_parser.add_argument("imgfile", action="store", type=str, help="Image to decode")
     decode_parser.add_argument("-o", action="store", type=str, default="./Output/decoded/",
                                help="Optional output directory")
+    decode_parser.add_argument("-encrypt", action="store", type=str, default="", help="Encrypt the data")
     decode_parser.set_defaults(func=cmd_decode)
 
     args = parser.parse_args()

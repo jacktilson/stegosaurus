@@ -1,12 +1,16 @@
-import os, numpy, cv2, bitarray, pathlib
+import os, numpy, cv2, bitarray, pathlib, base64
 from itertools import product, islice
 from typing import Iterable, Tuple, Dict, NewType
-
+from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 # Magic flag numbers
 LSB = 1
 EXT = 2
 NAME = 4
+ENC = 8
 
 # Type aliases
 ImgIndex = Tuple[int]
@@ -179,6 +183,10 @@ def encode(img: Img, data: bytes, **flags) -> Img:
     if "n_lsb" in flags and flags["n_lsb"] > 1: flagbyte |= LSB
     if "extension" in flags: flagbyte |= EXT
     if "filename" in flags: flagbyte |= NAME
+    if "encrypt" in flags: 
+        flagbyte |= ENC
+        salt = os.urandom(16)
+        data = Fernet(get_key(salt, flags["encrypt"])).encrypt(data)
 
     n_lsb = flags["n_lsb"] if flagbyte & LSB else 1
 
@@ -196,6 +204,7 @@ def encode(img: Img, data: bytes, **flags) -> Img:
     if flagbyte & LSB: write_int(img, indexes, n_lsb=1, data=n_lsb, byte_length=1)
     if flagbyte & EXT: write_data_frame(img, indexes, n_lsb, bytes(flags["extension"], "utf-8"))
     if flagbyte & NAME: write_data_frame(img, indexes, n_lsb, bytes(flags["filename"], "utf-8"))
+    if flagbyte & ENC: write_data_frame(img, indexes, n_lsb, salt)
 
     # write actual data frame
     write_data_frame(img, indexes, n_lsb, data, size_byte_length=4)
@@ -246,7 +255,7 @@ def write_bits(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, data: Bits):
         img.itemset(*index, encoded)
 
 
-def decode_img(img: Img) -> Tuple[bytes, Dict[str, str]]:
+def decode_img(img: Img, password: str=None) -> Tuple[bytes, Dict[str, str]]:
     """
     Decodes data stored in an image.
     :param img: The image data has been stored in.
@@ -262,11 +271,21 @@ def decode_img(img: Img) -> Tuple[bytes, Dict[str, str]]:
     n_lsb = read_int(img, indexes, 1, 1) if flags & LSB else 1
     if flags & EXT: meta["extension"] = bytes_to_string(read_data_frame(img, indexes, n_lsb, 1))
     if flags & NAME: meta["filename"] = bytes_to_string(read_data_frame(img, indexes, n_lsb, 1))
+    if flags & ENC:
+        if password is None: raise ValueError("No password provided")
+        salt = read_data_frame(img, indexes, n_lsb, 1)
+        return Fernet(get_key(salt, password)).decrypt(read_data_frame(img, indexes, n_lsb, 4)), meta
+    return read_data_frame(img, indexes, n_lsb, 4), meta
 
-    # read data
-    data = read_data_frame(img, indexes, n_lsb, 4)
-
-    return data, meta
+def get_key(salt: bytes, password: str) -> bytes:
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA512(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    return base64.urlsafe_b64encode(kdf.derive(str.encode(password)))
 
 def read_data_frame(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, size_byte_length: int=1) -> bytes:
     return read_bytes(img, indexes, n_lsb, byte_length=read_int(img, indexes, n_lsb, byte_length=size_byte_length))    
