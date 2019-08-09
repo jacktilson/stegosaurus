@@ -18,8 +18,7 @@ Img = NewType("Img", numpy.ndarray)
 Bits = NewType("Bits", bitarray.bitarray)
 
 # Super secret password, NOT for security, just obsfucation
-secret = "(St3g0.saurus_69)"
-
+secret = base64.b64encode(str.encode("(St3g0.saurus_69)"))
 ##################
 # util functions #
 ##################
@@ -257,7 +256,7 @@ def write_bits(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, data: Bits):
         img.itemset(*index, encoded)
 
 
-def decode_img(img: Img, password: str=None) -> Tuple[bytes, Dict[str, str]]:
+def decode_img(img: Img, password: bytes=None) -> Tuple[bytes, Dict[str, str]]:
     """
     Decodes data stored in an image.
     :param img: The image data has been stored in.
@@ -282,7 +281,7 @@ def decode_img(img: Img, password: str=None) -> Tuple[bytes, Dict[str, str]]:
         print("Incorrect token")
         exit(1)   
 
-def get_key(salt: bytes, password: str) -> bytes:
+def get_key(salt: bytes, password: bytes) -> bytes:
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA512(),
         length=32,
@@ -290,8 +289,8 @@ def get_key(salt: bytes, password: str) -> bytes:
         iterations=131072,
         backend=default_backend()
     )
-    print("Got key for: ", password)
-    return base64.urlsafe_b64encode(kdf.derive(str.encode(password)))
+    print(password)
+    return base64.urlsafe_b64encode(kdf.derive(password))
 
 def read_data_frame(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, size_byte_length: int=1) -> bytes:
     return read_bytes(img, indexes, n_lsb, byte_length=read_int(img, indexes, n_lsb, byte_length=size_byte_length))    
