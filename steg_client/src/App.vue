@@ -34,6 +34,11 @@ body {
   font-family: "Gill Sans MT", sans-serif;
   color: #eeeeee;
 }
+
+.text-col-brand {
+  color: #3F7F3F;
+}
+
 .card {
   background: rgba(31, 31, 31, 0.8);
 }
