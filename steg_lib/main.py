@@ -68,9 +68,9 @@ if __name__ == "__main__":
     # Parser for decode command
     decode_parser = subs.add_parser("decode", description="Decode a message stored in an image file.")
     decode_parser.add_argument("imgfile", action="store", type=str, help="Image to decode")
-    decode_parser.add_argument("-o", action="store", type=str, default="./Output/decoded/",
+    decode_parser.add_argument("-o", action="store", type=str, default="./Decoded/",
                                help="Optional output directory")
-    decode_parser.add_argument("-encrypt", action="store", type=str, default="", help="Encrypt the data")
+    decode_parser.add_argument("-encrypt", action="store", type=str, help="Encrypt the data")
     decode_parser.set_defaults(func=cmd_decode)
 
     args = parser.parse_args()
