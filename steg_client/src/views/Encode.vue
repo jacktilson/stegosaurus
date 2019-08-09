@@ -78,7 +78,8 @@
                     b-form-checkbox(v-model="encodeFileExt" ) Encode file extension
               b-button(v-on:click="submit" :disabled='!enableSubmit') Encode
           b-collapse(v-model="showWaiting")
-            b-card-text Waiting for a result...
+            scaling-squares-spinner(animation-duration="1024" size="128" color="#3F7F3F").mx-auto.my-4
+            b-card-title.text-center Encoding Your Data...
           b-collapse(v-model="showResult")
             b-card-text Download your file below
             b-button(v-on:click="downloadResult()" :disabled='!enableSubmit') Download
@@ -87,6 +88,8 @@
 import axios from "axios";
 import path from "path";
 import { saveAs } from 'file-saver';
+import { ScalingSquaresSpinner  } from 'epic-spinners';
+
 
 let INVALID = 0;
 let VALID = 1;
@@ -95,6 +98,7 @@ let RESULT = 3;
 
 export default {
   name: "Encode",
+  components: {ScalingSquaresSpinner},
   data() {
     return {
       formState: INVALID,
@@ -303,4 +307,3 @@ export default {
 };
 </script>
 <style lang="scss"></style>
-d
