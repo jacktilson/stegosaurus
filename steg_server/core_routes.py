@@ -205,6 +205,8 @@ def process_decode():
     # Fetch metadata
     filename = meta.get("filename", "output") #defaults to "output" if "filename" not present 
     extension = meta.get("extension", "") #defaults to "" if "extension" not present
+    print("************************")
+    print(extension)
     
     # Form attachement filename.
     attachment_filename = f"{filename}.{extension}" if extension != "" else filename

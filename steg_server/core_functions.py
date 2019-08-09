@@ -61,7 +61,7 @@ def read_data_bytes(trans_id):
     return data_file_bytes
   
 def get_img_ext(trans_id):
-    """Serves to obtain the file extension, with the dot, of the
+    """Serves to obtain the file extension, without the dot, of the
     original transaction image file. This is useful as it will also
     be the file extension of the resultant encoded image."""
     file_dir_abs = os.path.join(app.root_path, "temp", "originals")
@@ -83,7 +83,7 @@ def store_file_temp(trans_id, file, temp_sub_dir, file_suffix):
     # Set full absolute path of file for transaction.
     file_dir = os.path.join(app.root_path, "temp", temp_sub_dir) 
     if not os.path.isdir(file_dir):
-      os.makedirs(file_dir_abs) # handle event of directory not existing.
+      os.makedirs(file_dir) # handle event of directory not existing.
     # Get file extension
     try:
       disect_name = file.filename.split('.')
