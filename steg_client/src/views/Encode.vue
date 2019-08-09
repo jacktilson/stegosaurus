@@ -31,7 +31,7 @@
                     b-col(lg="6")
                       b-card-img(:src="imgFileDataString").rounded-0
                     b-col(lg="6")
-                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
+                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`" v-show="!imgInfoWaiting")
                         b-row
                           b-col(md="auto")
                             b-card-text Width: {{imgMeta.width}}
@@ -43,11 +43,13 @@
                             b-card-text Bit Depth: {{imgMeta.bitDepth}}
                           b-col(md="auto")
                             b-card-text Estimated Space: {{space}} Bytes
-                      scaling-squares-spinner.mx-auto.my-auto(
-                        v-show="imgInfoWaiting"
-                        animation-duration="1024"
-                        size="64"
-                        color="#3F7F3F")
+                      b-card-body(v-show="imgInfoWaiting" title="Getting image info...")
+                        scaling-squares-spinner.mx-auto.my-auto(
+                          v-show="imgInfoWaiting"
+                          animation-duration="1024"
+                          size="64"
+                          color="#3F7F3F")
+
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
@@ -115,15 +117,15 @@ export default {
       imgFile: null,
       imgFileDataString: "",
       imgMeta: {
-        width: "Calculating...",
-        height: "Calculating...",
-        channels: "Calculating...",
-        bitDepth: "Calculating..."
+        width: 0,
+        height: 0,
+        channels: 0,
+        bitDepth: 0
       },
       encodeFilename: false,
       encodeFileExt: false,
       trans_id: "",
-      space: "Calculating...",
+      space: 0,
       imgInfoWaiting: true,
     };
   },
@@ -241,7 +243,7 @@ export default {
       var extension = path.extname(this.dataFile.name);
       var filename = path.basename(this.dataFile.name, extension);
       if (this.encodeFileExt) {
-        formData.append("extension", extension.slice(ext.length>0?1:0));
+        formData.append("extension", extension.slice(extension.length>0?1:0));
       }
       if (this.encodeFilename) {
         formData.append("filename", filename);
