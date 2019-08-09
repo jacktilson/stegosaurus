@@ -34,7 +34,9 @@
                       b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
                         b-row
                           b-col(md="auto")
-                            b-card-text Dimensions: {{imgMeta.width}} x {{imgMeta.height}}
+                            b-card-text Width: {{imgMeta.width}}
+                          b-col(md="auto")
+                            b-card-text Height: {{imgMeta.height}}
                           b-col(md="auto")
                             b-card-text Channels: {{imgMeta.channels}}
                           b-col(md="auto")
@@ -79,9 +81,9 @@
                       :max="imgMeta.bitDepth" 
                       v-model="nBits")
                   b-form-group
-                    b-form-checkbox(v-model="encodeFilename" ) Encode filename
+                    b-form-checkbox(v-model="encodeFilename" ) Encode data file name
                   b-form-group
-                    b-form-checkbox(v-model="encodeFileExt" ) Encode file extension
+                    b-form-checkbox(v-model="encodeFileExt" ) Encode data file extension
               b-button(v-on:click="submit" :disabled='!enableSubmit') Encode
           b-collapse(v-model="showWaiting")
             scaling-squares-spinner(animation-duration="1024" size="128" color="#3F7F3F").mx-auto.my-4
@@ -113,15 +115,15 @@ export default {
       imgFile: null,
       imgFileDataString: "",
       imgMeta: {
-        width: 0,
-        height: 0,
-        channels: 0,
-        bitDepth: 0
+        width: "Calculating...",
+        height: "Calculating...",
+        channels: "Calculating...",
+        bitDepth: "Calculating..."
       },
       encodeFilename: false,
       encodeFileExt: false,
       trans_id: "",
-      space: 0,
+      space: "Calculating...",
       imgInfoWaiting: true,
     };
   },
@@ -239,7 +241,7 @@ export default {
       var extension = path.extname(this.dataFile.name);
       var filename = path.basename(this.dataFile.name, extension);
       if (this.encodeFileExt) {
-        formData.append("extension", extension);
+        formData.append("extension", extension.slice(ext.length>0?1:0));
       }
       if (this.encodeFilename) {
         formData.append("filename", filename);
