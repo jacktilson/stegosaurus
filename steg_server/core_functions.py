@@ -60,16 +60,16 @@ def read_data_bytes(trans_id):
       data_file_bytes = file.read()
     return data_file_bytes
   
-def get_img_ext(trans_id):
+def get_img_ext(trans_id, temp_dir, file_suffix):
     """Serves to obtain the file extension, without the dot, of the
     original transaction image file. This is useful as it will also
     be the file extension of the resultant encoded image."""
-    file_dir_abs = os.path.join(app.root_path, "temp", "originals")
+    file_dir_abs = os.path.join(app.root_path, "temp", temp_dir)
     # Change dir to the one with file in it.
     os.chdir(file_dir_abs)
     # Get the the file name of file concerned.
-    file_name = f'{trans_id}_orig'
-    # Find the file extension for the original image..
+    file_name = f'{trans_id}_{file_suffix}'
+    # Find the file extension for the original image...
     file_name_with_ext = glob.glob(f'{file_name}*')[0]
     # Strip the file name part.
     file_ext = file_name_with_ext.replace(f'{file_name}.', '')

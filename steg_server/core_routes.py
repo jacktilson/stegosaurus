@@ -113,9 +113,21 @@ def complete_encode():
     # Store the data file and retain its path.
     data_file_path = store_file_temp(trans_id, data_file, 'data', 'data')
     
-    # Set the prospective destination file with extension.
-    enc_img_path = get_temp_path(trans_id, 'encoded', 'encoded', file_exists=False, file_ext=get_img_ext(trans_id))[1]
+    
+    # Define the lossless and lossy file formats.
+    retainable_ext = ["bmp", "png", "dib"]
+    non_retainable_ext = ["jpeg", "jpg", "jpe", "jp2", "webp", "pbm", "pgm", "ppm", "sr", "ras", "tiff", "tif"]
+    # Check if we need to force png (popular and lossless, encoded data not lost), get destination file with extension.
+    original_ext = get_img_ext(trans_id, 'originals', 'orig')
+    enc_img_path = ''
+    if original_ext in retainable_ext:
+      enc_img_path = get_temp_path(trans_id, 'encoded', 'encoded', file_exists=False, file_ext=original_ext)[1]
+    elif original_ext in non_retainable_ext:
+      enc_img_path = get_temp_path(trans_id, 'encoded', 'encoded', file_exists=False, file_ext='png')[1]
+    else:
+      return reply_error_json('This output image format is not supported.')
 
+    
     # Read the original image into bytes.
     orig_img_path = get_temp_path(trans_id, 'originals', 'orig')[1]
     in_img = read_img(orig_img_path)
@@ -153,7 +165,7 @@ def download_encode():
     img_path = get_temp_path(trans_id, 'encoded', 'encoded')[1]
     
     # Obtain the file extension
-    img_ext = get_img_ext(trans_id)
+    img_ext = get_img_ext(trans_id, 'encoded', 'encoded')
     
     # Form the filename of the response image.
     return_filename = f'output.{img_ext}'
