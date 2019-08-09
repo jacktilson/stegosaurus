@@ -1,6 +1,7 @@
 import argparse
 import pathlib
 import steg
+import base64
 
 
 def cmd_encode_string(args):
@@ -22,13 +23,15 @@ def cmd_encode_file(args):
         flags["filename"] = path.stem
     if args.enc_extension:
         flags["extension"] = path.suffix[1:]
+    if args.encrypt:
+        flags["encrypt"] = base64.b64encode(str.encode(args.encrypt))
 
     steg.write_img(args.outfile, steg.encode(img, data, **flags))
 
 
 def cmd_decode(args):
     img = steg.read_img(args.imgfile)
-    data, meta = steg.decode_img(img)
+    data, meta = steg.decode_img(img, base64.b64encode(str.encode(args.encrypt)))
     filename = meta["filename"] if "filename" in meta else "output"
     ext = f".{meta['extension']}" if "extension" in meta else ""
     with open(f"{args.o}{filename}{ext}", "wb+") as file:
@@ -60,13 +63,15 @@ if __name__ == "__main__":
                                     help="Number of bits to encode on each channel")
     file_encode_parser.add_argument("-enc_extension", action="store_true", help="Encode the extension in the image.")
     file_encode_parser.add_argument("-enc_filename", action="store_true", help="Encode the filename in the image.")
+    file_encode_parser.add_argument("-encrypt", action="store", type=str, help="Encrypt the data")
     file_encode_parser.set_defaults(func=cmd_encode_file)
 
     # Parser for decode command
     decode_parser = subs.add_parser("decode", description="Decode a message stored in an image file.")
     decode_parser.add_argument("imgfile", action="store", type=str, help="Image to decode")
-    decode_parser.add_argument("-o", action="store", type=str, default="./Output/decoded/",
+    decode_parser.add_argument("-o", action="store", type=str, default="./Decoded/",
                                help="Optional output directory")
+    decode_parser.add_argument("-encrypt", action="store", type=str, help="Encrypt the data")
     decode_parser.set_defaults(func=cmd_decode)
 
     args = parser.parse_args()
