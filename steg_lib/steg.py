@@ -18,7 +18,7 @@ Img = NewType("Img", numpy.ndarray)
 Bits = NewType("Bits", bitarray.bitarray)
 
 # Super secret password, NOT for security, just obsfucation
-secret = base64.b64encode(str.encode("(St3g0.saurus_69)"))
+secret = b'KFN0M2cwLnNhdXJ1c182OSk='
 ##################
 # util functions #
 ##################
