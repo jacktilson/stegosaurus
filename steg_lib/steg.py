@@ -17,6 +17,9 @@ ImgIndex = Tuple[int]
 Img = NewType("Img", numpy.ndarray)
 Bits = NewType("Bits", bitarray.bitarray)
 
+# Super secret password, NOT for security, just obsfucation
+secret = "(St3g0.saurus_69)"
+
 ##################
 # util functions #
 ##################
@@ -184,10 +187,10 @@ def encode(img: Img, data: bytes, **flags) -> Img:
     if "extension" in flags: flagbyte |= EXT
     if "filename" in flags: flagbyte |= NAME
     if "encrypt" in flags: 
-        flagbyte |= ENC
-        salt = os.urandom(16)
-        data = Fernet(get_key(salt, flags["encrypt"])).encrypt(data)
-
+        flagbyte |= ENC 
+        password = flags["encrypt"]
+    else: password = secret
+    salt = os.urandom(16)
     n_lsb = flags["n_lsb"] if flagbyte & LSB else 1
 
     if len(data) > space_available(img, **flags):
@@ -204,11 +207,10 @@ def encode(img: Img, data: bytes, **flags) -> Img:
     if flagbyte & LSB: write_int(img, indexes, n_lsb=1, data=n_lsb, byte_length=1)
     if flagbyte & EXT: write_data_frame(img, indexes, n_lsb, bytes(flags["extension"], "utf-8"))
     if flagbyte & NAME: write_data_frame(img, indexes, n_lsb, bytes(flags["filename"], "utf-8"))
-    if flagbyte & ENC: write_data_frame(img, indexes, n_lsb, salt)
+    write_data_frame(img, indexes, n_lsb, salt)
 
     # write actual data frame
-    write_data_frame(img, indexes, n_lsb, data, size_byte_length=4)
-
+    write_data_frame(img, indexes, n_lsb, Fernet(get_key(salt, password)).encrypt(data), size_byte_length=4)
     return img
 
 def write_data_frame(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, data: bytes, size_byte_length: int=1):
@@ -271,20 +273,24 @@ def decode_img(img: Img, password: str=None) -> Tuple[bytes, Dict[str, str]]:
     n_lsb = read_int(img, indexes, 1, 1) if flags & LSB else 1
     if flags & EXT: meta["extension"] = bytes_to_string(read_data_frame(img, indexes, n_lsb, 1))
     if flags & NAME: meta["filename"] = bytes_to_string(read_data_frame(img, indexes, n_lsb, 1))
-    if flags & ENC:
-        if password is None: raise ValueError("No password provided")
-        salt = read_data_frame(img, indexes, n_lsb, 1)
+    salt = read_data_frame(img, indexes, n_lsb, 1)
+    if password == None: password = secret 
+    print(password)
+    try: 
         return Fernet(get_key(salt, password)).decrypt(read_data_frame(img, indexes, n_lsb, 4)), meta
-    return read_data_frame(img, indexes, n_lsb, 4), meta
+    except:
+        print("Incorrect token")
+        exit(1)   
 
 def get_key(salt: bytes, password: str) -> bytes:
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA512(),
         length=32,
         salt=salt,
-        iterations=100000,
+        iterations=131072,
         backend=default_backend()
     )
+    print("Got key for: ", password)
     return base64.urlsafe_b64encode(kdf.derive(str.encode(password)))
 
 def read_data_frame(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, size_byte_length: int=1) -> bytes:
