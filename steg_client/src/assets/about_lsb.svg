@@ -1,1 +1,55 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 445.19 292.33"><defs><style>.cls-1,.cls-5,.cls-8{fill:red;}.cls-2{fill:#ff0;}.cls-3{fill:blue;}.cls-4{font-size:17.22px;}.cls-4,.cls-7,.cls-8{font-family:CourierNewPS-BoldMT, Courier New;font-weight:700;}.cls-5{letter-spacing:0em;}.cls-6{fill:none;stroke:red;stroke-miterlimit:10;stroke-width:3px;}.cls-7{font-size:57.07px;letter-spacing:0.3em;}.cls-8{font-size:13.29px;}</style></defs><title>about_lsb</title><rect class="cls-1" x="15.52" y="13.39" width="79" height="79"/><path d="M94,13.89v78H16v-78H94m1-1H15v80H95v-80Z"/><rect x="94.52" y="13.39" width="79" height="79"/><path d="M173,13.89v78H95v-78h78m1-1H94v80h80v-80Z"/><rect class="cls-2" x="15.52" y="92.39" width="79" height="79"/><path d="M94,92.89v78H16v-78H94m1-1H15v80H95v-80Z"/><rect class="cls-3" x="94.52" y="92.39" width="79" height="79"/><path d="M173,92.89v78H95v-78h78m1-1H94v80h80v-80Z"/><text class="cls-4" transform="translate(192.27 42.62)">111111<tspan class="cls-5" x="62" y="0">01</tspan><tspan x="0" y="20.66">111111</tspan><tspan class="cls-5" x="62" y="20.66">10</tspan><tspan x="0" y="41.32">111111</tspan><tspan class="cls-5" x="62" y="41.32">00</tspan></text><text class="cls-4" transform="translate(192.27 117.23)">111111<tspan class="cls-5" x="62" y="0">00</tspan><tspan x="0" y="20.66">111111</tspan><tspan class="cls-5" x="62" y="20.66">01</tspan><tspan x="0" y="41.32">000000</tspan><tspan class="cls-5" x="62" y="41.32">01</tspan></text><text class="cls-4" transform="translate(297.36 42.62)">000000<tspan class="cls-5" x="62" y="0">11</tspan><tspan x="0" y="20.66">000000</tspan><tspan class="cls-5" x="62" y="20.66">01</tspan><tspan x="0" y="41.32">000000</tspan><tspan class="cls-5" x="62" y="41.32">10</tspan></text><text class="cls-4" transform="translate(297.36 118.67)">000000<tspan class="cls-5" x="62" y="0">11</tspan><tspan x="0" y="20.66">000000</tspan><tspan class="cls-5" x="62" y="20.66">01</tspan><tspan x="0" y="41.32">111111</tspan><tspan class="cls-5" x="62" y="41.32">00</tspan></text><path class="cls-6" d="M190.52,179.39s9.14,14,21.75,14h65.25l10,17,9-17s59.45,2,70.37-2,15.63-14,15.63-14"/><text class="cls-7" transform="translate(170.77 261.3)">C A T</text><text class="cls-8" transform="translate(144.27 281.11)">01 10 00 11</text><text class="cls-8" transform="translate(246.27 281.11)">01 10 00 01</text><text class="cls-8" transform="translate(348.27 281.11)">01 11 01 00 </text></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 22.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 445.2 292.3" style="enable-background:new 0 0 445.2 292.3;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FF0000;}
+	.st1{fill:#FFFF00;}
+	.st2{fill:#0000FF;}
+	.st3{fill:#FFFFFF;}
+	.st4{font-family:'Courier-Bold';}
+	.st5{font-size:17.22px;}
+	.st6{fill:none;stroke:#FF0000;stroke-width:3;stroke-miterlimit:10;}
+	.st7{font-size:57.07px;}
+	.st8{letter-spacing:17;}
+	.st9{font-size:13.29px;}
+</style>
+<title>about_lsb</title>
+<rect x="15.5" y="13.4" class="st0" width="79" height="79"/>
+<path d="M94,13.9v78H16v-78L94,13.9 M95,12.9H15v80h80V12.9z"/>
+<rect x="94.5" y="13.4" width="79" height="79"/>
+<path d="M173,13.9v78H95v-78L173,13.9 M174,12.9H94v80h80V12.9z"/>
+<rect x="15.5" y="92.4" class="st1" width="79" height="79"/>
+<path d="M94,92.9v78H16v-78H94 M95,91.9H15v80h80V91.9z"/>
+<rect x="94.5" y="92.4" class="st2" width="79" height="79"/>
+<path d="M173,92.9v78H95v-78H173 M174,91.9H94v80h80V91.9z"/>
+<text transform="matrix(1 0 0 1 192.27 42.62)" class="st3 st4 st5">111111</text>
+<text transform="matrix(1 0 0 1 254.27 42.62)" class="st0 st4 st5">01</text>
+<text transform="matrix(1 0 0 1 192.27 63.28)" class="st3 st4 st5">111111</text>
+<text transform="matrix(1 0 0 1 254.27 63.28)" class="st0 st4 st5">10</text>
+<text transform="matrix(1 0 0 1 192.27 83.94)" class="st3 st4 st5">111111</text>
+<text transform="matrix(1 0 0 1 254.27 83.94)" class="st0 st4 st5">00</text>
+<text transform="matrix(1 0 0 1 192.27 117.23)" class="st3 st4 st5">111111</text>
+<text transform="matrix(1 0 0 1 254.27 117.23)" class="st0 st4 st5">00</text>
+<text transform="matrix(1 0 0 1 192.27 137.89)" class="st3 st4 st5">111111</text>
+<text transform="matrix(1 0 0 1 254.27 137.89)" class="st0 st4 st5">01</text>
+<text transform="matrix(1 0 0 1 192.27 158.55)" class="st3 st4 st5">000000</text>
+<text transform="matrix(1 0 0 1 254.27 158.55)" class="st0 st4 st5">01</text>
+<text transform="matrix(1 0 0 1 297.36 42.62)" class="st3 st4 st5">000000</text>
+<text transform="matrix(1 0 0 1 359.36 42.62)" class="st0 st4 st5">11</text>
+<text transform="matrix(1 0 0 1 297.36 63.28)" class="st3 st4 st5">000000</text>
+<text transform="matrix(1 0 0 1 359.36 63.28)" class="st0 st4 st5">01</text>
+<text transform="matrix(1 0 0 1 297.36 83.94)" class="st3 st4 st5">000000</text>
+<text transform="matrix(1 0 0 1 359.36 83.94)" class="st0 st4 st5">10</text>
+<text transform="matrix(1 0 0 1 297.36 118.67)" class="st3 st4 st5">000000</text>
+<text transform="matrix(1 0 0 1 359.36 118.67)" class="st0 st4 st5">11</text>
+<text transform="matrix(1 0 0 1 297.36 139.33)" class="st3 st4 st5">000000</text>
+<text transform="matrix(1 0 0 1 359.36 139.33)" class="st0 st4 st5">01</text>
+<text transform="matrix(1 0 0 1 297.36 159.99)" class="st3 st4 st5">111111</text>
+<text transform="matrix(1 0 0 1 359.36 159.99)" class="st0 st4 st5">00</text>
+<path class="st6" d="M190.5,179.4c0,0,9.1,14,21.8,14h65.3l10,17l9-17c0,0,59.5,2,70.4-2s15.6-14,15.6-14"/>
+<text transform="matrix(1 0 0 1 170.77 261.3)" class="st3 st4 st7 st8">C A T</text>
+<text transform="matrix(1 0 0 1 144.27 281.11)" class="st0 st4 st9">01 10 00 11</text>
+<text transform="matrix(1 0 0 1 246.27 281.11)" class="st0 st4 st9">01 10 00 01</text>
+<text transform="matrix(1 0 0 1 348.27 281.11)" class="st0 st4 st9">01 11 01 00</text>
+</svg>
