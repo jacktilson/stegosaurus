@@ -14,3 +14,4 @@ steg_server/static/client
 .DS_Store
 steg_lib/Decoded/*
 steg_lib/Encoded/*
+**.vscode
