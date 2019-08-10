@@ -1,4 +1,4 @@
-import os, numpy, cv2, bitarray, pathlib, base64
+import os, numpy, cv2, bitarray, pathlib, base64, time
 from itertools import product, islice
 from typing import Iterable, Tuple, Dict, NewType
 from cryptography.fernet import Fernet
@@ -19,11 +19,10 @@ Bits = NewType("Bits", bitarray.bitarray)
 
 # Super secret password, NOT for security, just obsfucation
 secret = b'KFN0M2cwLnNhdXJ1c182OSk='
+
 ##################
 # util functions #
 ##################
-
-
 def read_img(img_filepath: str) -> Img:
     """
     Reads an image from a file into the opencv numpy format. (Accepts .bmp and .png)
@@ -146,7 +145,7 @@ def space_available(img: Img, **flags) -> int:
     width, height, channels, bitdepth = get_img_meta(img)
 
     header_size = 8 # encoded at 1LSB. Measured in bits. 8 initi aly because of the flag byte
-    subheader_size = 32 # Measured in bits. Everything encoded at n_lsb
+    subheader_size = 32 + 16*8 # Measured in bits. Everything encoded at n_lsb
     n_lsb = flags["n_lsb"] if "n_lsb" in flags else 1
     if n_lsb > 1: header_size += 8
 
@@ -160,7 +159,7 @@ def space_available(img: Img, **flags) -> int:
 
     # Return in bytes. All applications of this function are working in bytes.
     free_indexes = indexes - header_size - ciel_div(subheader_size, n_lsb)
-    free_bytes = (free_indexes * n_lsb) // 8
+    free_bytes = ((free_indexes * n_lsb) // 8 ) - 72 
     return max(0, free_bytes)
 
 def ciel_div(a: int, b: int):
@@ -178,8 +177,7 @@ def encode(img: Img, data: bytes, **flags) -> Img:
     :param img: The image in numpy array format.
     :param data: The binary data to encode within the image.
     :return:
-    """
-
+    """ 
     # construct the flag byte that comes at the first part of the file.
     flagbyte = 0
     if "n_lsb" in flags and flags["n_lsb"] > 1: flagbyte |= LSB
@@ -206,10 +204,10 @@ def encode(img: Img, data: bytes, **flags) -> Img:
     if flagbyte & LSB: write_int(img, indexes, n_lsb=1, data=n_lsb, byte_length=1)
     if flagbyte & EXT: write_data_frame(img, indexes, n_lsb, bytes(flags["extension"], "utf-8"))
     if flagbyte & NAME: write_data_frame(img, indexes, n_lsb, bytes(flags["filename"], "utf-8"))
-    write_data_frame(img, indexes, n_lsb, salt)
-
+    write_bytes(img, indexes, n_lsb, salt)
+   
     # write actual data frame
-    write_data_frame(img, indexes, n_lsb, Fernet(get_key(salt, password)).encrypt(data), size_byte_length=4)
+    write_data_frame(img, indexes, n_lsb, base64.urlsafe_b64decode(Fernet(get_key(salt, password)).encrypt(data)), size_byte_length=4)
     return img
 
 def write_data_frame(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, data: bytes, size_byte_length: int=1):
@@ -256,7 +254,7 @@ def write_bits(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, data: Bits):
         img.itemset(*index, encoded)
 
 
-def decode_img(img: Img, password: bytes=None) -> Tuple[bytes, Dict[str, str]]:
+def decode_img(img: Img, password: bytes=secret) -> Tuple[bytes, Dict[str, str]]:
     """
     Decodes data stored in an image.
     :param img: The image data has been stored in.
@@ -272,13 +270,12 @@ def decode_img(img: Img, password: bytes=None) -> Tuple[bytes, Dict[str, str]]:
     n_lsb = read_int(img, indexes, 1, 1) if flags & LSB else 1
     if flags & EXT: meta["extension"] = bytes_to_string(read_data_frame(img, indexes, n_lsb, 1))
     if flags & NAME: meta["filename"] = bytes_to_string(read_data_frame(img, indexes, n_lsb, 1))
-    salt = read_data_frame(img, indexes, n_lsb, 1)
-    if password == None: password = secret 
+    salt = read_bytes(img, indexes, n_lsb, 16)
+    data = read_data_frame(img, indexes, n_lsb, 4)
     try: 
-        return Fernet(get_key(salt, password)).decrypt(read_data_frame(img, indexes, n_lsb, 4)), meta
+        return Fernet(get_key(salt, password)).decrypt(base64.urlsafe_b64encode(data)), meta
     except:
-        print("Incorrect token")
-        exit(1)   
+        raise ValueError("Incorrect token")
 
 def get_key(salt: bytes, password: bytes) -> bytes:
     kdf = PBKDF2HMAC(
