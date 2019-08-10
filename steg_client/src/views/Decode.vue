@@ -74,7 +74,8 @@ export default {
       showForm: true,
       showResult: false,
       dataFile: null,
-      fileName: null
+      fileName: null,
+      password: ""
     };
   },
   methods: {
@@ -83,6 +84,9 @@ export default {
       this.showForm = false;
       let formData = new FormData();
       formData.append("img_file", this.imgFile);
+      if (password) {
+        formData.append("password", this.password);
+      }
       axios
         .post("/decode/process", formData, {
           headers: {
