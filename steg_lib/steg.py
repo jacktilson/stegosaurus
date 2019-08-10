@@ -274,7 +274,6 @@ def decode_img(img: Img, password: bytes=None) -> Tuple[bytes, Dict[str, str]]:
     if flags & NAME: meta["filename"] = bytes_to_string(read_data_frame(img, indexes, n_lsb, 1))
     salt = read_data_frame(img, indexes, n_lsb, 1)
     if password == None: password = secret 
-    print(password)
     try: 
         return Fernet(get_key(salt, password)).decrypt(read_data_frame(img, indexes, n_lsb, 4)), meta
     except:
@@ -289,7 +288,6 @@ def get_key(salt: bytes, password: bytes) -> bytes:
         iterations=131072,
         backend=default_backend()
     )
-    print(password)
     return base64.urlsafe_b64encode(kdf.derive(password))
 
 def read_data_frame(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, size_byte_length: int=1) -> bytes:
