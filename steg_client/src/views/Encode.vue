@@ -49,7 +49,6 @@
                           animation-duration="1024"
                           size="64"
                           color="#3F7F3F")
-
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
@@ -81,7 +80,18 @@
                       type="range"
                       min="1"
                       :max="imgMeta.bitDepth" 
-                      v-model="nBits")
+                      v-model="nBits"
+                    )
+                  b-form-group(
+                    label="Password"
+                    description="This is optional, you do not have to give the data a password"
+                    label-cols-lg="2"
+                  )
+                    b-form-input(
+                      v-model="password"
+                      type="password"
+                      placeholder="Enter a password to encrypt the data"
+                    )
                   b-form-group
                     b-form-checkbox(v-model="encodeFilename" ) Encode data file name
                   b-form-group
@@ -112,6 +122,7 @@ export default {
     return {
       formState: INVALID,
       nBits: 1,
+      password: null,
       dataFile: null,
       imgFile: null,
       imgFileDataString: "",
@@ -125,7 +136,7 @@ export default {
       encodeFileExt: false,
       trans_id: "",
       space: 0,
-      imgInfoWaiting: true
+      imgInfoWaiting: false
     };
   },
   computed: {
@@ -238,6 +249,9 @@ export default {
       formData.append("data_file", this.dataFile);
       formData.append("trans_id", this.trans_id);
       formData.append("n_lsb", this.nBits);
+      if (this.password) {
+        formData.append("password", this.password);
+      }
       var extension = path.extname(this.dataFile.name);
       var filename = path.basename(this.dataFile.name, extension);
       if (this.encodeFileExt) {
