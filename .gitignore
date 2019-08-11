@@ -13,3 +13,6 @@ steg_server/temp/*
 steg_server/static/client
 .DS_Store
 **/*.wsgi
+steg_lib/Decoded/*
+steg_lib/Encoded/*
+**.vscode
