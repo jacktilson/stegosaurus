@@ -309,7 +309,7 @@ def read_bits(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, bit_length: int
         chunk = bitarray.bitarray(endian="little")
         chunk.frombytes((img.item(*index) & mask).to_bytes(bytes_size, byteorder="little"))
         chunk_length = (n_lsb if total + n_lsb <= bit_length else bit_length - total)
-        data += chunk[:chunk_length]
+        data.extend(chunk[:chunk_length])
         total += chunk_length
 
     # check that the length of the extracted data is what was specified. If not then their were not enough indexes in
