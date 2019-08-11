@@ -1,5 +1,7 @@
 from steg import *
-import os, json, boto3, botocore, base64, pickle
+import os, numpy, cv2, bitarray, pathlib, json, boto3, botocore, base64, pickle
+from itertools import product, islice
+from typing import Iterable, Tuple, Dict, NewType
 
 def lambda_handler(event, context):
     """The function set to be run by AWS Lambda when
@@ -22,7 +24,7 @@ def lambda_handler(event, context):
         
         # Get the JSON containing base64-encoded image and data file bytes from the S3 bucket.
         print("Begin get json from bucket")
-        encode_json = s3.Object('steg-compute-data', f'{trans_id}.json')
+        encode_json = s3.Object('steg-compute-data', f'encode/recipe/{trans_id}.json')
         encode_json = encode_json.get()['Body'].read().decode('utf-8') 
         print("Json from bucket done")
         
@@ -58,13 +60,13 @@ def lambda_handler(event, context):
 
         # Dump raw bytes in the S3 bucket.
         print("Start np bytes dump into s3")
-        s3_enc_dump = s3.Object('steg-compute-data', f'encoded/{trans_id}')
+        s3_enc_dump = s3.Object('steg-compute-data', f'encode/npbin/{trans_id}')
         s3_enc_dump.put(Body=enc_nparray_bytes)
         print("Finish np bytes dump into s3")
         
         # Compile dict for response.
         json_response = json.dumps({"function": "encode",
-                                   "s3_result_key": f"encoded/{trans_id}"})
+                                   "s3_result_key": f"encode/npbin/{trans_id}"})
         status_code = 200
 
         print("json response compilation ok")
@@ -72,15 +74,55 @@ def lambda_handler(event, context):
       
       elif req.get("function") == 'decode':
         # Process the content of dict
-        enc_img_bytes = bytes(req.get("img_bytes"), encoding='utf8')
+        trans_id = req.get("trans_id")
+
+        # Connect to S3, note no need to auth as lambda in AWS network.
+        s3 = boto3.resource('s3')
+
+        # Fetch the recipe containing base64-encoded image bytes from S3.
+        print("Begin get json from bucket")
+        decode_json = s3.Object('steg-compute-data', f'decode/recipe/{trans_id}.json')
+        decode_json = decode_json.get()['Body'].read().decode('utf-8') 
+        print("Json from bucket done")
+
+        # Interpret the JSON.
+        decode_recipe = json.loads(decode_json)
+        
+        # Handle image bytes.
+        print("Start process enc_img_bytes")
+        enc_img_bytes = decode_recipe.get("img_bytes")
+        enc_img_bytes = enc_img_bytes.encode('ascii')
+        enc_img_bytes = base64.decodebytes(enc_img_bytes)
+        print("Finish process enc_img_bytes")
         
         # Perform the decoding.
         data, meta = decode_img(read_img_binary(enc_img_bytes))
+
+        # Prepare the resultant bytes for HTTP.
+        data_bytes = base64.encodebytes(data)
+        data_bytes = data_bytes.decode('ascii')
+
+        # Fetch metadata
+        filename = meta.get("filename", "output") #defaults to "output" if "filename" not present 
+        extension = meta.get("extension", "") #defaults to "" if "extension" not present
+        out_filename = f"{filename}.{extension}" if extension != "" else filename
+
+        # Compile JSON for dump in S3.
+        decode_json = json.dumps({"function": "decode",
+                                  "data_bytes": data_bytes,
+                                  "file_name": out_filename})
+
+        # Dump raw bytes in the S3 bucket.
+        print("Start json bytes dump into s3")
+        s3_dec_dump = s3.Object('steg-compute-data', f'decode/decbin/{trans_id}.json')
+        s3_dec_dump.put(Body=decode_json)
+        print("Finish json bytes dump into s3")
         
+
         # Compile dict for response.
         json_response = json.dumps({"function": "decode",
-                                   "data_bytes": data.decode("ISO-8859-1"),
-                                   "meta": meta})
+                                  "s3_result_key": f"decode/decbin/{trans_id}.json"})
+        
         status_code = 200
         
       else:
