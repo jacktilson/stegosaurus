@@ -10,7 +10,7 @@ from steg_lib.steg import *
 from .gen_transaction_id import *
 from .core_functions import *
 from io import BytesIO
-import os, glob, json
+import os, glob, json, requests, base64, boto3, botocore, pickle
 
 ##################
 # Homepage Route #
@@ -20,7 +20,7 @@ import os, glob, json
 def home():
     """Renders the temp splash page."""
     # Ensure domain in use is kosher.
-    if request.host == app.config['APP_HOST']: 
+    if request.host == app.config['APP_HOST']:
       return send_from_directory(os.path.join(app.static_folder, "client"), 'index.html')
     else:
       return send_from_directory(app.static_folder, 'bad_domain.html')
@@ -89,6 +89,7 @@ def space_encode():
 
 @app.route('/encode/complete', methods = ['POST'])
 def complete_encode():
+    print("********** REQUEST RECEIVED ********* ")
   
     # Seek to relevant POST data, setting as none where not in request.
     
@@ -128,21 +129,64 @@ def complete_encode():
       return reply_error_json('This output image format is not supported.')
 
     
-    # Read the original image into bytes.
-    orig_img_path = get_temp_path(trans_id, 'originals', 'orig')[1]
-    in_img = read_img(orig_img_path)
+    # Read the original image into bytes, and prep for HTTP.
+    img_bytes = read_file_bytes(trans_id, 'originals', 'orig')
+    img_bytes = base64.encodebytes(img_bytes)
+    img_bytes = img_bytes.decode('ascii')
+    #print(img_bytes)
     
-    # Read the data file into bytes.
-    in_data = read_data_bytes(trans_id)
+    # Read the data file into bytes, and prep for HTTP.
+    data_bytes = read_file_bytes(trans_id, 'data', 'data')
+    data_bytes = base64.encodebytes(data_bytes)
+    data_bytes = data_bytes.decode('ascii')
     
     # Process the encoding, feeding original image path, data file path and flags to encode function.
     flags_enc = build_flags(['filename', 'extension'], ['n_lsb'], request)
     
-    # Perform the encoding.
-    encoded_img = encode(in_img, in_data, **flags_enc)
+    # Prepare to send to S3.
+    s3_json = json.dumps({"function": "encode",
+                          "trans_id": trans_id,
+                          "img_bytes": img_bytes,
+                          "data_bytes": data_bytes,
+                          "flags": flags_enc})
     
+    # Connect to S3.
+    s3 = boto3.resource('s3',
+     aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
+     aws_secret_access_key=os.environ["AWS_SECRET_KEY"])
+      
+    # Dump the JSON in S3 bucket so lambda can pick up.
+    s3.Bucket(os.environ["AWS_BUCKET"]).put_object(Key=f'encode/recipe/{trans_id}.json', Body=s3_json)
+    
+    # Provide recipe for lambda, ie transaction ID so it can find the files in S3 bucket.
+    lambda_json = json.dumps({"function": "encode",
+                              "trans_id": trans_id})
+    
+    # Alert lambda of new work.
+    lambda_headers = {"Content-Type": "application/json"}
+    lambda_api_url = 'https://bxb220rh4e.execute-api.eu-west-2.amazonaws.com/deploy/steg-compute'
+    print("*** INIT API CALL TO LAMBDA ***")
+    response = requests.post(lambda_api_url, headers=lambda_headers, data=lambda_json)
+    print("*** COMPLETED API CALL TO LAMBDA ***")
+    #print(response)
+    #print(response.json)
+    #print(response.text)
+    
+    # Handle response.
+    lambda_result = json.loads(response.text)
+    s3_result_key = lambda_result.get("s3_result_key")
+    
+    # Fetch encoded data from lambda-linked s3.
+    enc_nparray_object = s3.Object('steg-compute-data', s3_result_key)
+    enc_nparray_bytes = enc_nparray_object.get()['Body'].read()
+    
+    # Prepare encoded data for writing to disk.
+    enc_nparray = pickle.loads(enc_nparray_bytes)
+  
     # Store the result
-    write_img(enc_img_path, encoded_img)
+    write_img(enc_img_path, enc_nparray)
+    
+    print("*** REQUEST FILLED ***")
 
     # Hand off the result.  
     return jsonify({"resp_msg": 'Data encoded to image successfully.'})    
@@ -206,22 +250,59 @@ def delete_encode():
 
 @app.route('/decode/process', methods = ['POST'])
 def process_decode():
+  
+    # Create an arbitrary ID for the JSON to be held in S3.
+    trans_id = gen()
     
     # Obtain image from POST request.
     img_file = request.files.get('img_file', default=None)
     if img_file is None: return reply_error_json('An image was not present in the POST request.')
     
-    # Perform the decode.
-    data, meta = decode_img(read_img_binary(img_file.read()))
+    # Load bytes from image, prepare for HTTP.
+    img_bytes = img_file.read()
+    img_bytes = base64.encodebytes(img_bytes)
+    img_bytes = img_bytes.decode('ascii')
     
-    # Fetch metadata
-    filename = meta.get("filename", "output") #defaults to "output" if "filename" not present 
-    extension = meta.get("extension", "") #defaults to "" if "extension" not present
-    print("************************")
-    print(extension)
+    # Connect to S3.
+    s3 = boto3.resource('s3',
+     aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
+     aws_secret_access_key=os.environ["AWS_SECRET_KEY"])
     
-    # Form attachement filename.
-    attachment_filename = f"{filename}.{extension}" if extension != "" else filename
+    # Prepare to send to S3.
+    s3_json = json.dumps({"function": "decode",
+                          "img_bytes": img_bytes})
+      
+    # Dump the JSON in S3 bucket so lambda can pick up.
+    s3.Bucket(os.environ["AWS_BUCKET"]).put_object(Key=f'decode/recipe/{trans_id}.json', Body=s3_json)
+   
+    # Prepare recipe to send to lambda.
+    lambda_json = json.dumps({"function": "decode",
+                              "trans_id": trans_id})
+    
+    # POST data to lambda for computation.
+    headers = {"Content-Type": "application/json"}
+    lambda_api_url = 'https://bxb220rh4e.execute-api.eu-west-2.amazonaws.com/deploy/steg-compute'
+    print("**** DECODE API CALL ****")
+    response = requests.post(lambda_api_url, headers=headers, data=lambda_json)
+    print(str(response.json))
+    print(response.text)
+    
+    # Handle response.
+    lambda_result = json.loads(response.text)
+    s3_result_key = lambda_result.get("s3_result_key")
+    
+    # Fetch lambda payload from S3.
+    decode_json_object = s3.Object('steg-compute-data', s3_result_key)
+    decode_json_bytes = decode_json_object.get()['Body'].read()
+    decode_json = json.loads(decode_json_bytes)
+    
+    # Unravel data file bytes from JSON.
+    data_bytes = decode_json.get("data_bytes")
+    data_bytes = data_bytes.encode('ascii')
+    data_bytes = base64.decodebytes(data_bytes)
+    
+    # Get the filename for data file.
+    attachment_filename = decode_json.get("file_name")
     
     # Send back the decoded output file.
-    return send_file(BytesIO(data), attachment_filename=attachment_filename, as_attachment=True)
+    return send_file(BytesIO(data_bytes), attachment_filename=attachment_filename, as_attachment=True)
