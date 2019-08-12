@@ -8,8 +8,9 @@ To deploy, the structure of the zip must be:
 [`bitarray`]
 [`cv2`]
 [`numpy`]
+[`cryptography`]
 [`steg.py`]
 [`lambda.py`]
 
 Note that [`steg.py`] is the core code for the stegosaurus encode and decode, and its dependent functions.
-You should use [`pip install bitarray cv2 numpy -t .`] to obtain the dependencies listed above.
+You should use [`pip install bitarray cv2 numpy cryptography -t .`] to obtain the dependencies listed above.
