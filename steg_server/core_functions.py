@@ -8,7 +8,7 @@ from steg_lib.steg import *
 from .gen_transaction_id import *
 from .core_functions import *
 from io import BytesIO
-import os, glob, json
+import os, glob, json, boto3
 
 ###########################
 # Shared Encode Functions #
@@ -53,9 +53,9 @@ def get_temp_path(trans_id, temp_sub_dir, file_suffix, file_exists=True, file_ex
       
     return True, file_loc_abs
   
-def read_data_bytes(trans_id):
+def read_file_bytes(trans_id, temp_dir, file_suffix):
     """Reads and returns the bytes of a transaction data file."""
-    data_file_path = get_temp_path(trans_id, 'data', 'data')[1]
+    data_file_path = get_temp_path(trans_id, temp_dir, file_suffix)[1]
     with open(data_file_path, "rb") as file:
       data_file_bytes = file.read()
     return data_file_bytes
