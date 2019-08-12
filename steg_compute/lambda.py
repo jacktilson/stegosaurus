@@ -94,9 +94,20 @@ def lambda_handler(event, context):
         enc_img_bytes = enc_img_bytes.encode('ascii')
         enc_img_bytes = base64.decodebytes(enc_img_bytes)
         print("Finish process enc_img_bytes")
+
+        # Fetch password if present in request.
+        password = decode_recipe.get("password")
+
+        # Decode according to receipt of password.
+        if password not None:
+            # Encode user-specified password into bytes then to base64 bytes as required by decode.
+            pwd_bytes = base64.encodebytes(password.encode())
+            # Perform decoding with user-specified password.
+            data, meta = decode_img(read_img_binary(enc_img_bytes), pwd_bytes)
+        else:
+            # Perform decoding with default password specified in steg.py
+            data, meta = decode_img(read_img_binary(enc_img_bytes))
         
-        # Perform the decoding.
-        data, meta = decode_img(read_img_binary(enc_img_bytes))
 
         # Prepare the resultant bytes for HTTP.
         data_bytes = base64.encodebytes(data)
