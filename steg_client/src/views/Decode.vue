@@ -84,7 +84,7 @@ export default {
       this.showForm = false;
       let formData = new FormData();
       formData.append("img_file", this.imgFile);
-      if (password) {
+      if (this.password) {
         formData.append("password", this.password);
       }
       axios
