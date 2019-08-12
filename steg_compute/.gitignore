@@ -1,4 +1,11 @@
 bitarray
 cv2
 numpy
+.libs_cffi_backend
+asn1crypto
+cffi
+cryptography
+pycparser
+_cffi_backend.cpython-36m-x86_64-linux-gnu.so
+six.py
 steg.py

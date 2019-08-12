@@ -183,9 +183,9 @@ def encode(img: Img, data: bytes, **flags) -> Img:
     if "n_lsb" in flags and flags["n_lsb"] > 1: flagbyte |= LSB
     if "extension" in flags: flagbyte |= EXT
     if "filename" in flags: flagbyte |= NAME
-    if "encrypt" in flags: 
+    if "password" in flags: 
         flagbyte |= ENC 
-        password = flags["encrypt"]
+        password = base64.encodebytes(flags["password"].encode())
     else: password = secret
     salt = os.urandom(16)
     n_lsb = flags["n_lsb"] if flagbyte & LSB else 1
