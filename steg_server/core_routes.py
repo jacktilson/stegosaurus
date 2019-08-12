@@ -141,7 +141,7 @@ def complete_encode():
     data_bytes = data_bytes.decode('ascii')
     
     # Process the encoding, feeding original image path, data file path and flags to encode function.
-    flags_enc = build_flags(['filename', 'extension'], ['n_lsb'], request)
+    flags_enc = build_flags(['filename', 'extension', 'password'], ['n_lsb'], request)
     
     # Prepare to send to S3.
     s3_json = json.dumps({"function": "encode",
@@ -168,7 +168,7 @@ def complete_encode():
     print("*** INIT API CALL TO LAMBDA ***")
     response = requests.post(lambda_api_url, headers=lambda_headers, data=lambda_json)
     print("*** COMPLETED API CALL TO LAMBDA ***")
-    #print(response)
+    print(response)
     #print(response.json)
     #print(response.text)
     
@@ -254,9 +254,10 @@ def process_decode():
     # Create an arbitrary ID for the JSON to be held in S3.
     trans_id = gen()
     
-    # Obtain image from POST request.
+    # Obtain image and password from POST request.
     img_file = request.files.get('img_file', default=None)
     if img_file is None: return reply_error_json('An image was not present in the POST request.')
+    password = request.form.get('password', default=None)
     
     # Load bytes from image, prepare for HTTP.
     img_bytes = img_file.read()
@@ -269,8 +270,14 @@ def process_decode():
      aws_secret_access_key=os.environ["AWS_SECRET_KEY"])
     
     # Prepare to send to S3.
-    s3_json = json.dumps({"function": "decode",
-                          "img_bytes": img_bytes})
+    s3_json_dict = {"function": "decode",
+                    "img_bytes": img_bytes}
+    
+    # Append password if one given.
+    if password is not None: s3_json_dict["password"] = password
+      
+    # Pack into JSON for S3.
+    s3_json = json.dumps(s3_json_dict)
       
     # Dump the JSON in S3 bucket so lambda can pick up.
     s3.Bucket(os.environ["AWS_BUCKET"]).put_object(Key=f'decode/recipe/{trans_id}.json', Body=s3_json)
