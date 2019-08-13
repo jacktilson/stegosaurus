@@ -94,29 +94,21 @@ export default {
           },
           responseType: "arraybuffer"
         })
-<<<<<<< HEAD
-        .then(function(response) {
-          saveAs(
-            new Blob([response.data]),
-            /filename=(?<filename>.*)$/g.exec(
-              response.headers["content-disposition"]
-            ).groups.filename
-          );
-=======
         .then(response => {
           this.imgDownloadWaiting = false;
           this.showResult = true;
           this.dataFile = new Blob([response.data]);
-          this.fileName = /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).groups.filename;
+          this.fileName = /filename=(?<filename>.*)$/g.exec(
+            response.headers["content-disposition"]
+          ).groups.filename;
           this.downloadResult();
->>>>>>> upstream/master
         })
         .catch(error => {
           alert(error);
         });
     },
     downloadResult() {
-      saveAs(this.dataFile, this.fileName)
+      saveAs(this.dataFile, this.fileName);
     },
     imgFileChange(event) {
       //Triggered when the file on the image element changes.
