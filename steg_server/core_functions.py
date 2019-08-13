@@ -8,7 +8,7 @@ from steg_lib.steg import *
 from .gen_transaction_id import *
 from .core_functions import *
 from io import BytesIO
-import os, glob, json
+import os, glob, json, boto3
 
 ###########################
 # Shared Encode Functions #
@@ -53,23 +53,23 @@ def get_temp_path(trans_id, temp_sub_dir, file_suffix, file_exists=True, file_ex
       
     return True, file_loc_abs
   
-def read_data_bytes(trans_id):
+def read_file_bytes(trans_id, temp_dir, file_suffix):
     """Reads and returns the bytes of a transaction data file."""
-    data_file_path = get_temp_path(trans_id, 'data', 'data')[1]
+    data_file_path = get_temp_path(trans_id, temp_dir, file_suffix)[1]
     with open(data_file_path, "rb") as file:
       data_file_bytes = file.read()
     return data_file_bytes
   
-def get_img_ext(trans_id):
-    """Serves to obtain the file extension, with the dot, of the
+def get_img_ext(trans_id, temp_dir, file_suffix):
+    """Serves to obtain the file extension, without the dot, of the
     original transaction image file. This is useful as it will also
     be the file extension of the resultant encoded image."""
-    file_dir_abs = os.path.join(app.root_path, "temp", "originals")
+    file_dir_abs = os.path.join(app.root_path, "temp", temp_dir)
     # Change dir to the one with file in it.
     os.chdir(file_dir_abs)
     # Get the the file name of file concerned.
-    file_name = f'{trans_id}_orig'
-    # Find the file extension for the original image..
+    file_name = f'{trans_id}_{file_suffix}'
+    # Find the file extension for the original image...
     file_name_with_ext = glob.glob(f'{file_name}*')[0]
     # Strip the file name part.
     file_ext = file_name_with_ext.replace(f'{file_name}.', '')
@@ -83,7 +83,7 @@ def store_file_temp(trans_id, file, temp_sub_dir, file_suffix):
     # Set full absolute path of file for transaction.
     file_dir = os.path.join(app.root_path, "temp", temp_sub_dir) 
     if not os.path.isdir(file_dir):
-      os.makedirs(file_dir_abs) # handle event of directory not existing.
+      os.makedirs(file_dir) # handle event of directory not existing.
     # Get file extension
     try:
       disect_name = file.filename.split('.')

@@ -31,6 +31,7 @@
                     b-col(lg="6")
                       b-card-img(:src="imgFileDataString").rounded-0
                     b-col(lg="6")
+<<<<<<< HEAD
                       b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
                         div(v-show="!imageUploading")
                           b-card-sub-title Image Info
@@ -54,6 +55,26 @@
                             color="#3F7F3F")
                           b-card-text.text-center Loading...
 
+=======
+                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`" v-show="!imgInfoWaiting")
+                        b-row
+                          b-col(md="auto")
+                            b-card-text Width: {{imgMeta.width}}
+                          b-col(md="auto")
+                            b-card-text Height: {{imgMeta.height}}
+                          b-col(md="auto")
+                            b-card-text Channels: {{imgMeta.channels}}
+                          b-col(md="auto")
+                            b-card-text Bit Depth: {{imgMeta.bitDepth}}
+                          b-col(md="auto")
+                            b-card-text Estimated Space: {{space}} Bytes
+                      b-card-body(v-show="imgInfoWaiting" title="Getting image info...")
+                        scaling-squares-spinner.mx-auto.my-auto(
+                          v-show="imgInfoWaiting"
+                          animation-duration="1024"
+                          size="64"
+                          color="#3F7F3F")
+>>>>>>> upstream/master
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
@@ -85,7 +106,18 @@
                       type="range"
                       min="1"
                       :max="imgMeta.bitDepth" 
-                      v-model="nBits")
+                      v-model="nBits"
+                    )
+                  b-form-group(
+                    label="Password"
+                    description="This is optional, you do not have to give the data a password"
+                    label-cols-lg="2"
+                  )
+                    b-form-input(
+                      v-model="password"
+                      type="password"
+                      placeholder="Enter a password to encrypt the data"
+                    )
                   b-form-group
                     b-form-checkbox(v-model="encodeFilename" ) Encode data file name
                   b-form-group
@@ -116,6 +148,7 @@ export default {
     return {
       formState: INVALID,
       nBits: 1,
+      password: null,
       dataFile: null,
       imgFile: null,
       imgFileDataString: "",
@@ -129,8 +162,12 @@ export default {
       encodeFileExt: false,
       trans_id: "",
       space: 0,
+<<<<<<< HEAD
       imageUploading: false,
       spaceWaiting: false
+=======
+      imgInfoWaiting: false
+>>>>>>> upstream/master
     };
   },
   computed: {
@@ -190,8 +227,12 @@ export default {
   watch: {
     imgFile(val, oldval) {
       if (this.validImgFile) {
+<<<<<<< HEAD
         this.imageUploading = true
         this.spaceWaiting = true
+=======
+        this.imgInfoWaiting = true;
+>>>>>>> upstream/master
 
         // check the input actually has a valid file in it
         let reader = new FileReader(); // File reader object for converting file to base64
@@ -246,6 +287,9 @@ export default {
       formData.append("data_file", this.dataFile);
       formData.append("trans_id", this.trans_id);
       formData.append("n_lsb", this.nBits);
+      if (this.password) {
+        formData.append("password", this.password);
+      }
       var extension = path.extname(this.dataFile.name);
       var filename = path.basename(this.dataFile.name, extension);
       if (this.encodeFileExt) {
@@ -282,7 +326,10 @@ export default {
           responseType: "arraybuffer"
         })
         .then(response => {
+<<<<<<< HEAD
           
+=======
+>>>>>>> upstream/master
           let filename = /filename=(?<filename>.*)$/g.exec(
             response.headers["content-disposition"]
           ).groups.filename;
@@ -294,7 +341,11 @@ export default {
     },
 
     updateSpace() {
+<<<<<<< HEAD
       this.spaceWaiting = true;
+=======
+      this.imgInfoWaiting = true;
+>>>>>>> upstream/master
 
       // Build params for space request
       var params = { trans_id: this.trans_id };
@@ -320,7 +371,10 @@ export default {
         .then(response => {
           this.space = response.data.space_available;
           this.imgInfoWaiting = false;
+<<<<<<< HEAD
           this.spaceWaiting = false;
+=======
+>>>>>>> upstream/master
           this.validateForm();
         })
         .catch(error => {

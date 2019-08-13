@@ -11,7 +11,8 @@ Flag Bits | Flag Name |Purpose
 0 | LSB|If the number of LSB is > 1
 1 | EXT |Set if a file extension is present
 2 | NAME |  Set if a filename is present
-3-7 | |Reserved for future use
+3 | ENC | Sets whether custom password used
+4-7 | |Reserved for future use
 
 
 Size | Required | Purpose | Bit Depth
@@ -21,6 +22,7 @@ Size | Required | Purpose | Bit Depth
 1 byte | When EXT | Length of file ext in bytes (when EXT) | nLSB
 1 byte | When NAME | Length of filename in bytes (when NAME) | nLSB
 4 bytes | Yes | Length of data in bytes | nLSB
+16 bytes | Yes | Salt for the encryption | 
  
 
 # Example Data Structure
@@ -36,7 +38,8 @@ Byte | Value | Purpose
 16 | 00000000 | 
 17 | 00000001 | 
 18 | 00010100 | Data size is 276 bytes long
-19-294 | Data | The data
+19-35 | salt | Salt to decrypt
+36-294 | Data | The data
 
 
 
