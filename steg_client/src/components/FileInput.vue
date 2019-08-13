@@ -19,13 +19,16 @@ import path from "path";
 
 /*
     This component is a file input with builtin validation of filesize and filetype and responsive feedback.
-*/
 
+    It also allows custom validation. If the customValidation prop is externally set to false, it will make the input
+    invalid. The invalid feedback message from this only needs to define cases for those in the custom validation prop
+    and take precedence over the build in validation messages.
+*/
 
 export default {
     name: "File-Input",
     props: {
-        validFile: { // Any valid file will be propagated here
+        file: { // Any file will be propagated here
             type: File,
             default: null,
             required: false
@@ -42,17 +45,17 @@ export default {
         },
         customValidation: { // Optional validation in addition to the builtin
             type: Boolean,
-            default: null,
+            default: True,
             required: false
         },
         customInvalidFeedback: { // Feedback to handle the optional validation
             type: String,
-            default: "",
+            default: "Invalid!",
             required: false
         },
-        customValidFeedback: { // Feedback to handle the optional validation
+        validFeedbackMessage: { // The message displayed on a valid feedback.
             type: String,
-            default: "",
+            default: "Awesome!",
             required: false
         },
         filesizeLimit: {
@@ -69,9 +72,6 @@ export default {
             required: false
         }
     },
-    data(){ return {
-        file: null
-    }},
     computed: {
         isValid(){
             var valid = true; // assume valid
@@ -82,7 +82,7 @@ export default {
             }
 
             // check filetype
-            var extension = path.extname(this.file.name);
+            var extension = path.extname(this.file.name).toLowerCase();
             if (this.fileTypes.exec(extension) === null){
                 valid &= false;
             }
@@ -95,20 +95,13 @@ export default {
             return valid
         },
         validFeedback(){
-            if (isValid){
-                // check custom validation
-                if (this.customValidation !== null && this.customValidation){
-                    return this.customValidFeedback
-                }
-                return "Awesome!"
-            }
-            return ""
+            return isValid?validFeedbackMessage:""
         },
         invalidFeedback(){
             if (!isValid){
                 // check custom validation
-                if (this.customValidation !== null && !this.customValidation){
-                    return this.customValidFeedback
+                if (!this.customValidation){
+                    return this.customInvalidFeedback
                 }
                 
                 // check filetype
@@ -131,9 +124,7 @@ export default {
     },
     watch: {
         file(val) {
-            if (this.isValid){
-                this.$emit("change", val);
-            }
+            this.$emit("change", val);
         }
     }
 };
