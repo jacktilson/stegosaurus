@@ -10,8 +10,8 @@ b-form-group(
         b-form-file(
             id="input"
             v-model="file"
-            placeholder="Choose a file..."
-            drop-placeholder="Drop a file here..."
+            :placeholder="placeholder"
+            :drop-placeholder="dropPlaceholder"
             :state="validFile")
 </template>
 <script>
@@ -31,45 +31,49 @@ export default {
         file: { // Any file will be propagated here
             type: File,
             default: null,
-            required: false
         },
         label: { // The label that will be displayed above the file input
             type: String,
             default: "File Input",
-            required: false
         },
         description: { // The description that will be displayed when nothing has been input
             type: String,
             default: "Please input a file",
-            required: false
+        },
+        placeholder: { // The placeholder text in the file input
+            type: String,
+            default: "Choose a file..."
+        },
+        dropPlaceholder: { // The placeholder text in the file input for drag and drop
+            type: String,
+            default: "Drop a file here..."
         },
         customValidation: { // Optional validation in addition to the builtin
             type: Boolean,
             default: True,
-            required: false
         },
         customInvalidFeedback: { // Feedback to handle the optional validation
             type: String,
             default: "Invalid!",
-            required: false
         },
         validFeedbackMessage: { // The message displayed on a valid feedback.
             type: String,
             default: "Awesome!",
-            required: false
         },
         filesizeLimit: {
             type: Number,
             default: 0, //e.g 134217728 is 128 MiB in Bytes. 0 means no limit
-            required: false,
             validator: function(val){
                 return val >= 0
             }
         },
-        fileTypes: { // A regex matching filetypes.
-            type: RegExp,
-            default: /.*/g,
-            required: false
+        fileTypes: { // An array of allowed filetypes. Leave null to not apply
+            type: Array,
+            default: null,
+        },
+        mimeTypes: { // An array of allowed mimetypes. Leave null to not apply.
+            type: Array,
+            default: null
         }
     },
     computed: {
@@ -83,7 +87,12 @@ export default {
 
             // check filetype
             var extension = path.extname(this.file.name).toLowerCase();
-            if (this.fileTypes.exec(extension) === null){
+            if (!(this.fileTypes !== null && this.fileTypes.includes(extension))){
+                valid &= false;
+            }
+
+            // check mimetype
+            if (!(this.mimeTypes !== null && this.mimeTypes.includes(this.file.type))){
                 valid &= false;
             }
 
@@ -105,14 +114,19 @@ export default {
                 }
                 
                 // check filetype
-                var extension = path.extname(this.file.name);
-                if (this.fileTypes.exec(extension) === null){
+                var extension = path.extname(this.file.name).toLowerCase();
+                if (!(this.fileTypes !== null && this.fileTypes.includes(extension))){
                     return "Invalid filetype!";
+                }
+
+                // check mimetype
+                if (!(this.mimeTypes !== null && this.mimeTypes.includes(this.file.type))){
+                    return "Filetype valid but invalid data format!"
                 }
 
                 // check filesize limit
                 if (!(this.filesizeLimit && this.file.size < this.filesizeLimit)){
-                    return "Invalid filesize"
+                    return "Invalid filesize!"
                 }
             }
             return ""
