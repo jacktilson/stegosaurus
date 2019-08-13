@@ -325,8 +325,6 @@ export default {
         params.n_lsb = this.nBits;
       }
 
-
-
       // Post it
       axios
         .get("/encode/space", { params })
