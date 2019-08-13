@@ -15,7 +15,7 @@
                 label="Image File"
                 label-for="input-imgFile"
                 label-class="font-weight-bold"
-                :description="validImgFile?'':'Enter a image file to hide your data inside.'"
+                :description="validImgFile?'':'Enter an image file to hide your data inside.'"
                 :state="validImgFile"
                 :invalid-feedback="feedbackInvalidImgFile"
                 :valid-feedback="feedbackValidImgFile")
@@ -31,7 +31,6 @@
                     b-col(lg="6")
                       b-card-img(:src="imgFileDataString").rounded-0
                     b-col(lg="6")
-<<<<<<< HEAD
                       b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
                         div(v-show="!imageUploading")
                           b-card-sub-title Image Info
@@ -55,26 +54,6 @@
                             color="#3F7F3F")
                           b-card-text.text-center Loading...
 
-=======
-                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`" v-show="!imgInfoWaiting")
-                        b-row
-                          b-col(md="auto")
-                            b-card-text Width: {{imgMeta.width}}
-                          b-col(md="auto")
-                            b-card-text Height: {{imgMeta.height}}
-                          b-col(md="auto")
-                            b-card-text Channels: {{imgMeta.channels}}
-                          b-col(md="auto")
-                            b-card-text Bit Depth: {{imgMeta.bitDepth}}
-                          b-col(md="auto")
-                            b-card-text Estimated Space: {{space}} Bytes
-                      b-card-body(v-show="imgInfoWaiting" title="Getting image info...")
-                        scaling-squares-spinner.mx-auto.my-auto(
-                          v-show="imgInfoWaiting"
-                          animation-duration="1024"
-                          size="64"
-                          color="#3F7F3F")
->>>>>>> upstream/master
               b-collapse(v-model="showDataInput")
                 b-form-group(
                   label="Data File"
@@ -162,12 +141,9 @@ export default {
       encodeFileExt: false,
       trans_id: "",
       space: 0,
-<<<<<<< HEAD
       imageUploading: false,
-      spaceWaiting: false
-=======
+      spaceWaiting: false,
       imgInfoWaiting: false
->>>>>>> upstream/master
     };
   },
   computed: {
@@ -227,13 +203,8 @@ export default {
   watch: {
     imgFile(val, oldval) {
       if (this.validImgFile) {
-<<<<<<< HEAD
-        this.imageUploading = true
-        this.spaceWaiting = true
-=======
-        this.imgInfoWaiting = true;
->>>>>>> upstream/master
-
+        this.imageUploading = true;
+        this.spaceWaiting = true;
         // check the input actually has a valid file in it
         let reader = new FileReader(); // File reader object for converting file to base64
         reader.onload = event => {
@@ -326,10 +297,6 @@ export default {
           responseType: "arraybuffer"
         })
         .then(response => {
-<<<<<<< HEAD
-          
-=======
->>>>>>> upstream/master
           let filename = /filename=(?<filename>.*)$/g.exec(
             response.headers["content-disposition"]
           ).groups.filename;
@@ -341,12 +308,7 @@ export default {
     },
 
     updateSpace() {
-<<<<<<< HEAD
       this.spaceWaiting = true;
-=======
-      this.imgInfoWaiting = true;
->>>>>>> upstream/master
-
       // Build params for space request
       var params = { trans_id: this.trans_id };
       if (this.dataFile) {
@@ -371,10 +333,7 @@ export default {
         .then(response => {
           this.space = response.data.space_available;
           this.imgInfoWaiting = false;
-<<<<<<< HEAD
           this.spaceWaiting = false;
-=======
->>>>>>> upstream/master
           this.validateForm();
         })
         .catch(error => {
