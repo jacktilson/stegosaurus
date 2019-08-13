@@ -164,8 +164,9 @@ def complete_encode():
     
     # Alert lambda of new work.
     lambda_headers = {"Content-Type": "application/json"}
-    lambda_api_url = 'https://bxb220rh4e.execute-api.eu-west-2.amazonaws.com/deploy/steg-compute'
+    lambda_api_url = 'https://bhczbacdz5.execute-api.eu-west-2.amazonaws.com/deploy/steg-encode'
     print("*** INIT API CALL TO LAMBDA ***")
+    print(lambda_api_url)
     response = requests.post(lambda_api_url, headers=lambda_headers, data=lambda_json)
     print("*** COMPLETED API CALL TO LAMBDA ***")
     print(response)
@@ -288,9 +289,11 @@ def process_decode():
     
     # POST data to lambda for computation.
     headers = {"Content-Type": "application/json"}
-    lambda_api_url = 'https://bxb220rh4e.execute-api.eu-west-2.amazonaws.com/deploy/steg-compute'
-    print("**** DECODE API CALL ****")
+    lambda_api_url = 'https://0vxfryzq1b.execute-api.eu-west-2.amazonaws.com/deploy/steg-decode'
+    print("**** START DECODE API CALL ****")
+    print(lambda_api_url)
     response = requests.post(lambda_api_url, headers=headers, data=lambda_json)
+    print("**** END DECODE API CALL ****")
     print(str(response.json))
     print(response.text)
     
