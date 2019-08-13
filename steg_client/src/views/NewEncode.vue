@@ -20,7 +20,7 @@
                 dropPlaceholder="Drop an image file here..."
                 :filesizeLimit="134217728"
                 :fileTypes="['.bmp','.png','.jpeg','.jpg']"
-                :mimeTypes="["image/bmp", "image/png", "image/jpeg"]")
+                :mimeTypes='["image/bmp", "image/png", "image/jpeg"]')
               //- The filesize here is equivalent to 128MiB
 
               b-collapse(v-model="showImgInfo").mb-3
@@ -106,7 +106,7 @@ import axios from "axios";
 import path from "path";
 import { saveAs } from "file-saver";
 import { ScalingSquaresSpinner } from "epic-spinners";
-import { FileInput } from "@components/FileInput.vue";
+import { FileInput } from "@/components/FileInput.vue";
 
 let INVALID = 0;
 let VALID = 1;
@@ -288,8 +288,6 @@ export default {
       if (this.nBits > 1) {
         params.n_lsb = this.nBits;
       }
-
-
 
       // Post it
       axios
