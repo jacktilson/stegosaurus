@@ -14,9 +14,17 @@ export default {
         reader: new FileReader(),
         imgSrc = ""
     }},
+    computed: {
+        valid(){
+            return this.imgFile && this.imgFile.type.startsWith("image")
+        }
+    },
     watch: {
         imgFile(val){
-            this.reader.readAsDataUrl(val)   
+            if (this.valid)
+                this.reader.readAsDataUrl(val)
+            else
+                this.imgSrc = ""
         }
     },
     created(){
