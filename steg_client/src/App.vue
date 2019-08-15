@@ -23,7 +23,7 @@ import Parallax from "parallax-js";
 export default {
   components: { Navbar },
   mounted() {
-    var parallax = new Parallax(document.getElementById("background"));
+    new Parallax(document.getElementById("background"));
   }
 };
 </script>
