@@ -12,7 +12,8 @@
         v-model="file"
         :placeholder="placeholder"
         :drop-placeholder="dropPlaceholder"
-        :state="isValid")
+        :state="isValid"
+        size="lg")
 </template>
 <script>
 import path from "path";
@@ -130,6 +131,11 @@ export default {
   watch: {
     file(val) {
       this.$emit("change", val);
+    },
+    isValid(val, oldVal) {
+      if (val != oldVal) {
+        this.$emit("isValid", val);
+      }
     }
   }
 };
