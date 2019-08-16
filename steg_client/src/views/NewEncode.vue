@@ -27,7 +27,7 @@
                 b-card(no-body).overflow-hidden
                   b-row(no-gutters)
                     b-col(lg="6")
-                      b-card-img(:src="imgFileDataString").rounded-0
+                      ImageFileViewer(:imgFile="imgFile").card-img.rounded-0
                     b-col(lg="6")
                       b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
                         div(v-show="!imageUploading")
@@ -107,6 +107,7 @@ import path from "path";
 import { saveAs } from "file-saver";
 import { ScalingSquaresSpinner } from "epic-spinners";
 import { FileInput } from "@/components/FileInput.vue";
+import { ImgageFileViewer } from "@/components/ImageFileViewer";
 
 let INVALID = 0;
 let VALID = 1;
@@ -115,7 +116,7 @@ let RESULT = 3;
 
 export default {
   name: "Encode",
-  components: { ScalingSquaresSpinner, FileInput },
+  components: { ScalingSquaresSpinner, FileInput, ImgageFileViewer },
   data() {
     return {
       formState: INVALID,
@@ -125,7 +126,6 @@ export default {
       validDataFile: false,
       imgFile: null,
       validImgFile: false,
-      imgFileDataString: "",
       imgMeta: {
         width: 0,
         height: 0,
@@ -169,12 +169,6 @@ export default {
       if (this.validImgFile) {
         this.imageUploading = true;
         this.spaceWaiting = true;
-        // check the input actually has a valid file in it
-        let reader = new FileReader(); // File reader object for converting file to base64
-        reader.onload = event => {
-          this.imgFileDataString = event.target.result;
-        };
-        reader.readAsDataURL(this.imgFile); // Start the reader, calls above function on completion
 
         //also trigger upload of file to server
         let formData = new FormData();
