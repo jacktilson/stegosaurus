@@ -21,7 +21,7 @@ export default {
 <style lang="scss">
 .navbar {
   border-bottom: solid rgb(63, 127, 63) 4px;
-  background-color: rgb(54, 54, 54);
+  background-color: rgb(24, 11, 43);
 }
 
 .navbar-toggler {
