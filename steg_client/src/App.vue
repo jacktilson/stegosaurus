@@ -1,6 +1,6 @@
 <template lang="pug">
   #app
-    #background
+    #background(data-origin-y="1.0")
       .layer(data-depth="0.025")
         .layer-6
       .layer(data-depth="0.05")
@@ -23,7 +23,7 @@ import Parallax from "parallax-js";
 export default {
   components: { Navbar },
   mounted() {
-    var parallax = new Parallax(document.getElementById("background"));
+    new Parallax(document.getElementById("background"));
   }
 };
 </script>
@@ -40,8 +40,9 @@ body {
 }
 
 .card {
-  background: rgba(31, 31, 31, 0.8);
+  background: rgba(24, 11, 43, 0.8);
 }
+
 .btn {
   border: 1px solid rgb(63, 127, 63);
   background-color: rgb(63, 127, 63);

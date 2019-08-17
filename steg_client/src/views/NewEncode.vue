@@ -11,25 +11,23 @@
         b-card.my-3
           b-collapse(v-model="showForm")
             form
-              b-form-group(
+              File-Input(
+                v-model="imgFile"
+                :isValid="validImgFile"
                 label="Image File"
-                label-for="input-imgFile"
-                label-class="font-weight-bold"
-                :description="validImgFile?'':'Enter an image file to hide your data inside.'"
-                :state="validImgFile"
-                :invalid-feedback="feedbackInvalidImgFile"
-                :valid-feedback="feedbackValidImgFile")
-                  b-form-file(
-                    id="input-imgFile"
-                    v-model="imgFile"
-                    placeholder="Choose a bmp/png file..."
-                    drop-placeholder="Drop a bmp/png file here to encode to..."
-                    :state="validImgFile")
+                description="Enter an image file to hide your data inside"
+                placeholder="Choose an image file..."
+                dropPlaceholder="Drop an image file here..."
+                :filesizeLimit="134217728"
+                :fileTypes="['.bmp','.png','.jpeg','.jpg']"
+                :mimeTypes='["image/bmp", "image/png", "image/jpeg"]')
+              //- The filesize here is equivalent to 128MiB
+
               b-collapse(v-model="showImgInfo").mb-3
                 b-card(no-body).overflow-hidden
                   b-row(no-gutters)
                     b-col(lg="6")
-                      b-card-img(:src="imgFileDataString").rounded-0
+                      ImageFileViewer(:imgFile="imgFile").card-img.rounded-0
                     b-col(lg="6")
                       b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
                         div(v-show="!imageUploading")
@@ -55,20 +53,14 @@
                           b-card-text.text-center Loading...
 
               b-collapse(v-model="showDataInput")
-                b-form-group(
+                File-Input(
+                  v-model="dataFile"
+                  :isValid="validImgFile"
                   label="Data File"
-                  label-for="input-dataFile"
-                  label-class="font-weight-bold"
-                  :description="dataFile?'':'Enter a data file to encode onto the image'"
-                  :state="validDataFile"
-                  :invalid-feedback="feedbackInvalidDataFile"
-                  :valid-feedback="feedbackValidDataFile"
-                )
-                  b-form-file(
-                    v-model="dataFile"
-                    :state="dataFile"
-                    placeholder="Choose file to encode on to image..."
-                    drop-placeholder="Drop file here to encode onto image...")
+                  description="Enter a data file to encoode onto the image"
+                  :filesizeLimit="space") 
+                  //- The filesize here is equivalent to 128MiB
+
               b-collapse(v-model="showEncodeSettings")
                 b-form-group(
                   label="Encoding Settings"
@@ -114,6 +106,8 @@ import axios from "axios";
 import path from "path";
 import { saveAs } from "file-saver";
 import { ScalingSquaresSpinner } from "epic-spinners";
+import { FileInput } from "@/components/FileInput.vue";
+import { ImgageFileViewer } from "@/components/ImageFileViewer";
 
 let INVALID = 0;
 let VALID = 1;
@@ -122,15 +116,16 @@ let RESULT = 3;
 
 export default {
   name: "Encode",
-  components: { ScalingSquaresSpinner },
+  components: { ScalingSquaresSpinner, FileInput, ImgageFileViewer },
   data() {
     return {
       formState: INVALID,
       nBits: 1,
       password: null,
       dataFile: null,
+      validDataFile: false,
       imgFile: null,
-      imgFileDataString: "",
+      validImgFile: false,
       imgMeta: {
         width: 0,
         height: 0,
@@ -147,37 +142,6 @@ export default {
     };
   },
   computed: {
-    validImgFile() {
-      return (
-        Boolean(this.imgFile) &&
-        ["image/bmp", "image/png"].includes(this.imgFile.type)
-      );
-    },
-    feedbackValidImgFile() {
-      return this.validImgFile ? "Awesome!" : "";
-    },
-    feedbackInvalidImgFile() {
-      if (this.imgFile) {
-        if (!["image/bmp", "image/png"].includes(this.imgFile.type)) {
-          return "Needs to be a .bmp or a .png";
-        }
-      }
-      return "";
-    },
-    validDataFile() {
-      return Boolean(this.dataFile) && this.dataFile.size <= this.space;
-    },
-    feedbackValidDataFile() {
-      return this.validDataFile ? "Awesome!" : "";
-    },
-    feedbackInvalidDataFile() {
-      if (this.dataFile) {
-        if (this.dataFile.size > this.space) {
-          return "Data file too large for that image on these settings.";
-        }
-      }
-      return "";
-    },
     showForm() {
       return [INVALID, VALID].includes(this.formState);
     },
@@ -205,12 +169,6 @@ export default {
       if (this.validImgFile) {
         this.imageUploading = true;
         this.spaceWaiting = true;
-        // check the input actually has a valid file in it
-        let reader = new FileReader(); // File reader object for converting file to base64
-        reader.onload = event => {
-          this.imgFileDataString = event.target.result;
-        };
-        reader.readAsDataURL(this.imgFile); // Start the reader, calls above function on completion
 
         //also trigger upload of file to server
         let formData = new FormData();
