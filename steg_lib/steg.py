@@ -1,10 +1,13 @@
 import os, numpy, cv2, bitarray, pathlib, base64
 from itertools import product, islice
+from multiprocessing import Pool
+from functools import partial
 from typing import Iterable, Tuple, Dict, NewType
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
 
 # Magic flag numbers
 LSB = 1
@@ -309,7 +312,7 @@ def read_bits(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, bit_length: int
     :return: Continuous bitarray of extracted bits
     """
     data = bitarray.bitarray(endian="little")
-    bytes_size = ciel_div(n_lsb, 8)
+    bytes_per_chunk = ciel_div(n_lsb, 8)
 
     # bit depth of the image (number of bits in each pixel channel
     bit_depth = get_img_meta(img)[3]
@@ -326,7 +329,7 @@ def read_bits(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, bit_length: int
     
     for index in islice(indexes, ciel_div(bit_length, n_lsb)):
         chunk = bitarray.bitarray(endian="little")
-        chunk.frombytes((img.item(*index) & mask).to_bytes(bytes_size, byteorder="little"))
+        chunk.frombytes((img.item(*index) & mask).to_bytes(bytes_per_chunk, byteorder="little"))
         chunk_length = (n_lsb if total + n_lsb <= bit_length else bit_length - total)
         data.extend(chunk[:chunk_length])
         total += chunk_length
@@ -337,3 +340,40 @@ def read_bits(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, bit_length: int
         raise ValueError("Ran out of indexes at which to extract data.")
 
     return data
+
+def read_data_frame_threaded(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, threadpool: Pool, size_byte_length: int=1) -> bytes:
+    return read_bytes_threaded(img, indexes, n_lsb, read_int(img, indexes, n_lsb, byte_length=size_byte_length), threadpool)    
+
+def read_bytes_threaded(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, byte_length: int, threadpool: Pool) -> bytes:
+    return read_bits_threaded(img, indexes, n_lsb, byte_length * 8, threadpool).tobytes()
+
+def read_bits_threaded(img: Img, indexes: Iterable[ImgIndex], n_lsb: int, bit_length: int, threadpool: Pool):
+    data = bitarray.bitarray(endian="little")
+    bytes_per_chunk = ciel_div(n_lsb, 8)
+
+    # bit depth of the image (number of bits in each pixel channel
+    bit_depth = get_img_meta(img)[3]
+
+    # check each channel has enough bit depth to accommodate using that many bits to encode with.
+    if bit_depth < n_lsb:
+        raise ValueError("Image bit depth not big enough for decoding that many bits per channel")
+
+    # calculate the bit mask to get only the least significant bits on each pixel channel..
+    mask = ((2 ** n_lsb) - 1)  # e.g. 10111010 AND 00000011 (mask) = 00000010
+
+    #args = ((img, index, mask, n_lsb, bytes_per_chunk) for index in islice(indexes, ciel_div(bit_length, n_lsb)))
+    
+    read_func = partial(read_chunk, img, mask, n_lsb, bytes_per_chunk)
+    total = 0
+    for chunk in threadpool.imap(read_func, islice(indexes, ciel_div(bit_length, n_lsb)), 256):
+        chunk_length = (n_lsb if total + n_lsb <= bit_length else bit_length - total)
+        data.extend(chunk[:chunk_length])
+        total += chunk_length
+    
+    return data
+        
+
+def read_chunk(img: Img, mask: int, n_lsb: int, bytes_per_chunk: int, index: ImgIndex) -> Bits:
+    chunk = bitarray.bitarray(endian="little")
+    chunk.frombytes((img.item(*index) & mask).to_bytes(bytes_per_chunk, byteorder="little"))
+    return chunk

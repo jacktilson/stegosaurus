@@ -98,7 +98,9 @@ export default {
           this.imgDownloadWaiting = false;
           this.showResult = true;
           this.dataFile = new Blob([response.data]);
-          this.fileName = /filename=(?<filename>.*)$/g.exec(response.headers["content-disposition"]).groups.filename;
+          this.fileName = /filename=(?<filename>.*)$/g.exec(
+            response.headers["content-disposition"]
+          ).groups.filename;
           this.downloadResult();
         })
         .catch(error => {
@@ -106,7 +108,7 @@ export default {
         });
     },
     downloadResult() {
-      saveAs(this.dataFile, this.fileName)
+      saveAs(this.dataFile, this.fileName);
     },
     imgFileChange(event) {
       //Triggered when the file on the image element changes.
