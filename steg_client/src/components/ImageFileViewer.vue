@@ -5,10 +5,10 @@
 export default {
     name: "ImageFileViewer",
     props: {
-        imgFile: {
-            type: File,
-            required: true
-        }
+      imgFile: {
+          validator: imgFile => imgFile instanceof File || imgFile === null,
+          required: true
+      }
     },
     data() { return {
         reader: new FileReader(),
