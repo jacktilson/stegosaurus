@@ -40,7 +40,7 @@ body {
 }
 
 .card {
-  background: rgba(31, 31, 31, 0.8);
+  background: rgba(24, 11, 43, 0.8);
 }
 
 .btn {

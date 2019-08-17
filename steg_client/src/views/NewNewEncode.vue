@@ -14,9 +14,9 @@
               v-model="dataFile"
               @isValid="validDataFile = $event"
               label="Data File"
-              description="Enter an data file to hide your data inside"
-              placeholder="Choose an data file..."
-              dropPlaceholder="Drop an data file here..."
+              description="Enter a data file to hide your data inside"
+              placeholder="Choose a data file..."
+              dropPlaceholder="Drop a data file here..."
               :filesizeLimit="134217728")
               //- The filesize here is equivalent to 128MiB
             b-collapse(:visible='showImgOption', id="showImg")
@@ -33,13 +33,14 @@
                 b-col(lg="5")
                   File-Input(
                     v-model="imgFile"
+                    ref="imgFileInput"
                     :isValid="validImgFile"
                     label="Image Upload"
                     description="Upload an image here to encode your data inside"
                     placeholder="Choose an image..."
-                    dropPlaceholder="Drop an image here"
+                    dropPlaceholder="Drop an image here.."
                     :filesizeLimit="134217728"
-                    :fileTypes="['.jpg', '.png', '.bmp', '.tiff']"
+                    :fileTypes="['.jpg', '.png', '.bmp', '.tiff', '.jpeg']"
                     :mimeTypes="['image/jpeg', 'image/png', 'image/bmp', 'image/tiff']")
                 b-col(lg="2").my-auto.text-center
                   b-card-title or
@@ -49,13 +50,24 @@
                     label="Use Stock Image"
                     label-class="font-weight-bold"
                     description="Automatically find a stock image to use instead")
-                    b-btn(id="useStock").w-100 Find a stock image
+                    StockImageGetter.w-100(v-model="imgFile" v-on:clear="$refs['imgFileInput'].reset()"
+                      width="1920"
+                      height="1080")
+              b-collapse(:visible='showImgPreview', id='showImgPreview')
+                b-card(no-body).overflow-hidden
+                  b-row(no-gutters)
+                    b-col(lg="6")
+                      ImageFileViewer(:imgFile="imgFile").rounded-0.card-img
+                    b-col(lg="6")
 </template>
 <script>
 import FileInput from "@/components/FileInput.vue";
+import ImageFileViewer from "@/components/ImageFileViewer.vue";
+import StockImageGetter from "@/components/StockImageGetter.vue";
+
 export default {
   name: "Encode",
-  components: { FileInput },
+  components: { FileInput, ImageFileViewer, StockImageGetter },
   data() {
     return {
       dataFile: null,
@@ -63,7 +75,8 @@ export default {
       encodeFilename: true,
       encodeFileExt: true,
       imgFile: null,
-      validImgFile: false
+      validImgFile: false,
+      showImgPreview: true
     };
   },
   computed: {

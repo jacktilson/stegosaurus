@@ -1,5 +1,5 @@
 <template lang="pug">
-    img(:src="imgSrc" :alt="imgFile?imgFile.name:'No Image'")
+    b-img(:src="imgSrc" :alt="imgFile?imgFile.name:'No Image'")
 </template>
 <script>
 export default {
@@ -12,7 +12,7 @@ export default {
     },
     data() { return {
         reader: new FileReader(),
-        imgSrc = ""
+        imgSrc: ""
     }},
     computed: {
         valid(){
@@ -22,7 +22,7 @@ export default {
     watch: {
         imgFile(val){
             if (this.valid)
-                this.reader.readAsDataUrl(val)
+                this.reader.readAsDataURL(val)
             else
                 this.imgSrc = ""
         }
