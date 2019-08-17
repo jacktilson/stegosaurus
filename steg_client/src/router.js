@@ -2,7 +2,7 @@ import Vue from "vue";
 import Router from "vue-router";
 import About from "./views/About.vue";
 import Decode from "./views/Decode.vue";
-import Encode from "./views/Encode.vue";
+import Encode from "./views/NewNewEncode.vue";
 import Error from "./views/Error.vue";
 
 Vue.use(Router);
