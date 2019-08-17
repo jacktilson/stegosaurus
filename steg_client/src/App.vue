@@ -46,9 +46,9 @@ body {
 .btn {
   border: 1px solid rgb(63, 127, 63);
   background-color: rgb(63, 127, 63);
-  border-radius: 5px;
-  padding: 14px 28px;
-  font-size: 16px;
+  // border-radius: 5px;
+  // padding: 14px 28px;
+  // font-size: 16px;
   cursor: pointer;
   &:hover {
     transition: 256ms;
