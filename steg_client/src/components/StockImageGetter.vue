@@ -1,5 +1,5 @@
 <template lang="pug">
-    btn(v-on:click="getImage")
+    b-btn(v-on:click="getImage()") Get Stock Image
 </template>
 <script>
 import axios from "axios";
@@ -12,16 +12,28 @@ export default {
     }},
     model: {prop: "imgFile", event: "change"},
     methods: {
-        getImage(){
-            axios.get(`https://picsum.photos/${this.width}/${this.height}`).then(response => {
-                this.imgFile = new File(
-                    new Blob([response.data]),
-                    `img_${this.width}_${this.height}.${response.headers["content-type"].split("/")[1]}`)
-            }).catch(error => {
-                alert("Could not retrieve an image")
-            })
-        }
-    }
-    
+      getImage(){
+        axios
+          .get(`https://picsum.photos/${this.width}/${this.height}`, {
+            responseType: "blob"
+          })
+          .then(response => {
+            this.imgFile = new File(
+              [response.data],
+              `img_${this.width}_${this.height}.${response.headers["content-type"].split("/")[1]}`,
+              {type: response.headers["content-type"]});
+            this.$emit("clear");
+
+          })
+          .catch(error => {
+            alert(error);
+          })
+      }
+    },
+    watch: {
+      imgFile(val) {
+        this.$emit("change", val);
+      }
+    }   
 }
 </script>
