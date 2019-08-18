@@ -17,3 +17,4 @@ steg_server/static/client
 steg_lib/Decoded/*
 steg_lib/Encoded/*
 **.vscode
+keys.py
