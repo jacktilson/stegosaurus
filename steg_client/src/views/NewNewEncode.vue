@@ -8,38 +8,36 @@
             |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
             | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
             | channel with the data to be hidden, changing the actual value by the smallest amount.
-        b-collapse(v-model="showForm")
+        b-collapse(v-model="formStatus != READY")
           form
             b-card.mt-3
               File-Input(
-                v-model="dataFile"
-                @isValid="validDataFile = $event"
+                v-model="data.file"
+                @isValid="data.state ? $event VALID : INVALID"
                 label="Data File"
                 description="Enter a data file to hide your data inside"
                 placeholder="Choose a data file..."
                 dropPlaceholder="Drop a data file here..."
                 :filesizeLimit="134217728")
                 //- The filesize here is equivalent to 128MiB
-              b-collapse(:visible='showImgOption', id="showImg")
+              b-collapse(:visible='data.state == VALID', id="showImg")
                 b-row
                   b-col(sm="auto")
                     b-form-group
-                      b-form-checkbox(v-model="encodeFilename" ) Encode data file name
+                      b-form-checkbox(v-model="data.options.filename" ) Encode data file name
                   b-col(sm="auto")
                     b-form-group
-                      b-form-checkbox(v-model="encodeFileExt" ) Encode data file extension
+                      b-form-checkbox(v-model="data.options.extension" ) Encode data file extension
                 b-form-group(
-                    label="Password"
-                    label-class="font-weight-bold"
-                    description="This is optional, you do not have to give the data a password"
-                  )
-                    b-form-input(
-                      v-model="password"
-                      type="password"
-                      placeholder="Enter a password to encrypt the data"
-                      size="lg"
-                    )
-            b-collapse(:visible='showImgOption', id="showImg")
+                  label="Password"
+                  label-class="font-weight-bold"
+                  description="This is optional, you do not have to give the data a password")
+                  b-form-input(
+                    v-model="data.options.password"
+                    type="password"
+                    placeholder="Enter a password to encrypt the data"
+                    size="lg")
+            b-collapse(:visible='data.state == VALID', id="showImgOptions")
               b-card.mt-3
                 b-row
                   b-col(lg="5")
@@ -66,7 +64,7 @@
                         width="1920"
                         height="1080")
                 b-collapse(:visible='showImgPreview', id='showImgPreview')
-                  b-card(no-body).overflow-hidden
+                  b-card(no-body).overflow-hidden.mb-3
                     b-row(no-gutters)
                       b-col(lg="6")
                         ImageFileViewer(:imgFile="imgFile").rounded-0.card-img
@@ -82,34 +80,36 @@
                                 b-card-text Channels: {{imgMeta.channels}}
                               b-col(md="auto")
                                 b-card-text Bit Depth: {{imgMeta.bitDepth}}
-                          div(v-show="!spaceWaiting")
                             b-row
                               b-col(md="auto")
                                 b-card-text Estimated Space: {{space}} Bytes
-                          div(v-show="imageUploading || spaceWaiting").pt-5
+                          div(v-show="imageUploading").pt-5
                             scaling-squares-spinner.mx-auto(
                               :animation-duration="1024"
                               :size="64"
                               color="#3F7F3F")
                             b-card-text.text-center Loading...
-                    b-form-group(
-                      :label="`Bits: ${nlsb}`"
-                      label-for="input-nlsb"
-                      label-cols-lg="2"
-                      description="The number of bits to overwrite per channel of the image")
-                      b-form-input(
-                        id="input-nlsb"
-                        type="range"
-                        min="1"
-                        :max="imgMeta.bitDepth" 
-                        v-model="nlsb")
-                  b-button(v-on:click="submit" :disabled='!enableSubmit') Encode
-        b-collapse(v-model="showWaiting")
+                  b-form-group(
+                    :label="`Bits: ${nlsb}`"
+                    label-for="input-nlsb"
+                    label-cols-lg="2"
+                    description="The number of bits to overwrite per channel of the image")
+                    b-form-input(
+                      id="input-nlsb"
+                      type="range"
+                      min="1"
+                      :max="imgMeta.bitDepth" 
+                      v-model="nlsb")
+              b-collapse(:visible="showImgPreview" id="showSubmitButton")
+                b-row
+                  b-col(sm="12").d-flex
+                    b-button.m-4.w-100(v-on:click="submit" size="lg") Encode
+        b-collapse(v-model="formStatus == UPLOADING")
           scaling-squares-spinner(animation-duration="1024" size="128" color="#3F7F3F").mx-auto.my-4
           b-card-title.text-center Encoding Your Data...
-        b-collapse(v-model="showResult")
+        b-collapse(v-model="formStatus == READY")
           b-card-title Download your file below
-          b-button(v-on:click="downloadResult") Download
+          b-button(v-on:click="readyDownload") Download
 
 </template>
 <script>
@@ -117,7 +117,14 @@ import FileInput from "@/components/FileInput.vue";
 import ImageFileViewer from "@/components/ImageFileViewer.vue";
 import StockImageGetter from "@/components/StockImageGetter.vue";
 import { ScalingSquaresSpinner } from "epic-spinners";
+import path from "path";
+import { saveAs } from "file-saver";
 import axios from 'axios';
+
+let INVALID = 0;
+let VALID = 1;
+let UPLOADING = 2;
+let READY = 3;
 
 export default {
   name: "Encode",
@@ -125,28 +132,32 @@ export default {
   data() {
     return {
       trans_id: "",
-      dataFile: null,
-      validDataFile: false,
-      encodeFilename: true,
-      encodeFileExt: true,
-      imgFile: null,
-      validImgFile: false,
-      password: "",
-      imgMeta: {
-        width: 0,
-        height: 0,
-        channels: 0,
-        bitDepth: 8
+      formStatus: INVALID,
+      img: {
+        file: null,
+        state: INVALID,
+        spaceAvailable: 0,
+        meta: {
+          waiting: false,
+          width: 0,
+          height: 0,
+          channels: 0,
+          bitDepth: 8
+        },
+        options: {
+          nlsb: 1
+        }
       },
-      space: 0,
-      required: 0,
-      nlsb: 1,
-      imageUploading: false,
-      spaceWaiting: false,
-      imgInfoWaiting: false,
-      imgFileUploaded: false,
-      dataFileUploaded: false,
-      readyDownload: false
+      data: {
+        file: null,
+        state: INVALID,
+        spaceRequired: 0,
+        options: {
+          password: "",
+          filename: true,
+          extension: true
+        }
+      }
     };
   },
   created() {
@@ -165,33 +176,41 @@ export default {
     },
     showImgPreview() {
       return Boolean(this.imgFile);
+    },
+    enableSubmit() {
+      return this.imgFileUploaded && this.dataFileUploaded;
     }
   },
   watch: {
     dataFile() {
       this.dataFileUploaded = false;
-      // Add the trans_id and the datafile to the formdata
-      let formData = new FormData();
-      formData.append("trans_id", this.trans_id);
-      formData.append("data_file", this.dataFile);
-      // Post the data to the server, to associate a data file with the trans_id
-      axios
-        .post("/encode/data/upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
-        })
-        // eslint-disable-next-line
-        .then(response => {
-          this.dataFileUploaded = true;
-          this.updateRequired();
-        })
-        .catch(error => {
-          alert(error);
-        })
+      if(this.validDataFile) {
+        this.dataFileUploading = true;
+        // Add the trans_id and the datafile to the formdata
+        let formData = new FormData();
+        formData.append("trans_id", this.trans_id);
+        formData.append("data_file", this.dataFile);
+        // Post the data to the server, to associate a data file with the trans_id
+        axios
+          .post("/encode/data/upload", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+          // eslint-disable-next-line
+          .then(response => {
+            this.dataFileUploaded = true;
+            this.dataFileUploading = false;
+            this.updateRequired();
+          })
+          .catch(error => {
+            alert(error);
+          })
+      }
     },
     imgFile() {
       this.imgFileUploaded = false;
+      this.imageUploading = true;
       // Add the trans_id and the imgfile to the formdata
       let formData = new FormData();
       formData.append("trans_id", this.trans_id);
@@ -206,11 +225,23 @@ export default {
         // eslint-disable-next-line
         .then(response => {
           this.imgFileUploaded = true;
+          this.imgMeta.width = response.data.width;
+          this.imgMeta.height = response.data.height;
+          this.imgMeta.channels = response.data.channels;
+          this.imgMeta.bitDepth = response.data.bitdepth;
+          this.imgFileUploaded = true;
+          this.imageUploading = false;
           this.updateSpace();
         })
         .catch(error => {
           alert(error);
         })
+    },
+    nlsb() {
+      this.updateSpace();
+    },
+    encodeFilename() {
+      this.updateSpace();
     }
   },
   methods: {
@@ -218,19 +249,12 @@ export default {
       this.spaceWaiting = true;
 
       var params = { trans_id: this.trans_id };
-      var ext = path.extname(this.dataFile.name);
-      var filename = path.basename(this.dataFile.name, ext);
-      if(this.encodeFilename) 
-        params.filename = filename;
-      if(this.encodeFileExt) 
-        params.extension = ext.slice(ext.length > 0 ? 1 : 0); // remove the dot from the extension
       if(this.nlsb > 1)
         params.n_lsb = this.nlsb;
-
       axios
         .get("/encode/image/space", { params })
         .then(response => {
-          this.space = response.data.space;
+          this.space = response.data.space_available;
           this.spaceWaiting = false;
         })
         .catch(error => {
@@ -240,19 +264,8 @@ export default {
     updateRequired() {
       this.spaceWaiting = true;
 
-      var params = { 
-        trans_id: this.trans_id,
-        size: this.dataFile.size()
-      };
-      var ext = path.extname(this.dataFile.name);
-      var filename = path.basename(this.dataFile.name, ext);
-      if(this.encodeFilename)
-        params.filename = filename;
-      if(this.encodeFileExt) 
-        params.extension = ext.slice(ext.length > 0 ? 1 : 0); // remove the dot from the extension
-
       axios
-        .get("/encode/data/space", { params })
+        .get("/encode/data/space", { trans_id: this.trans_id })
         .then(response => {
           this.required = response.data.space;
           this.spaceWaiting = false;
@@ -265,24 +278,13 @@ export default {
       this.readyDownload = false;
       // Build formdata
       let formData = new FormData();
-      formData.append("data_file", this.dataFile);
       formData.append("trans_id", this.trans_id);
-      formData.append("n_lsb", this.nBits);
+      formData.append("n_lsb", this.nlsb);
+      formData.append("encode_filename", this.encodeFilename);
+      formData.append("encode_extension", this.encodeFileExt);
       if (this.password) {
         formData.append("password", this.password);
       }
-      var extension = path.extname(this.dataFile.name);
-      var filename = path.basename(this.dataFile.name, extension);
-      if (this.encodeFileExt) {
-        formData.append(
-          "extension",
-          extension.slice(extension.length > 0 ? 1 : 0)
-        );
-      }
-      if (this.encodeFilename) {
-        formData.append("filename", filename);
-      }
-
       axios
         .post("/encode/complete", formData, {
           headers: {
