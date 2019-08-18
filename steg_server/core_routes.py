@@ -25,16 +25,29 @@ def home():
     else:
       return send_from_directory(app.static_folder, 'bad_domain.html')
   
-      
-######################################
-# Encode Image Upload Response Route #
-######################################
+################################################
+# Encode Image Transaction ID Generation Route #
+#################################################
+ 
+@app.route('/encode/init', methods = ['GET'])
+def init_encode():
   
-@app.route('/encode/upload', methods = ['POST'])
-def upload_encode():
-    
   # Generate a file name / transaction ID.
   trans_id = gen()
+  
+  # Hand off the ID to client.
+  return jsonify({"trans_id": trans_id})
+  
+###########################################
+# Encode Image File Upload Response Route #
+###########################################
+  
+@app.route('/encode/image/upload', methods = ['POST'])
+def upload_image_encode():
+    
+  # Obtain transaction ID from POST request.
+  trans_id = request.form.get("trans_id", default=None)
+  if trans_id is None: return reply_error_json('Transaction ID was not present in the POST request.')
   
   # Obtain image from POST request.
   img_file = request.files.get('img_file', default=None)
@@ -56,12 +69,41 @@ def upload_encode():
                   "height": img_meta[1], "channels": img_meta[2],
                   "bitdepth": img_meta[3]})
 
-##################################
-# Asynchronous Space Check Route #
-##################################
+###########################################
+# Encode Data File Upload Response Route #
+###########################################
+  
+@app.route('/encode/data/upload', methods = ['POST'])
+def upload_data_encode():
+    
+  # Obtain transaction ID from POST request.
+  trans_id = request.form.get("trans_id", default=None)
+  if trans_id is None: return reply_error_json('Transaction ID was not present in the POST request.')
+  
+  # Obtain image from POST request.
+  data_file = request.files.get('data_file', default=None)
+  if data_file is None: return reply_error_json('Data file was not present in the POST request.')
+  
+  # Test if temp folder has capacity for this.
+  storage_test = validate_temp(img_file)
+  if storage_test != True: return storage_test
+  
+  # Drop the image in relevant directory, retain path.
+  data_abs_path = store_file_temp(trans_id, data_file, 'data', 'data')
+  if data_abs_path is None: reply_error_json('The data file uploaded does not have an extension.')
 
-@app.route('/encode/space', methods = ['GET'])
-def space_encode():
+  # Grab information about the newly saved data file.
+  data_size = file_size = get_file_size(data_file)
+  
+  # Hand off information to client.
+  return jsonify({"trans_id": trans_id, "data_bytes": data_size})
+
+############################################################################################
+# Asynchronous Space Check Route: How much encodable space with this N_LSB for this image? #
+############################################################################################
+
+@app.route('/encode/image/space', methods = ['GET'])
+def space_available_encode():
   
     # Gather relevant GET request elements
     
@@ -82,6 +124,31 @@ def space_encode():
     
     # Hand back a JSON on success.
     return jsonify({"space_available": space})
+  
+########################################################################################################
+# Asynchronous Space Check Route: How much space required in img to accom 1 LSB encoding of data file? #
+########################################################################################################
+
+@app.route('/encode/data/space', methods = ['GET'])
+def space_required_encode():
+  
+    """ NOTE: THIS ROUTE IS INCOMPLETE 
+    Pending core team to create steg_lib space_required function to be called here."""
+  
+    # Gather relevant GET request elements
+    
+    # Obtain and validate transaction ID.
+    trans_id = request.args.get('trans_id', default=None)
+    trans_id_test = check_trans_id(trans_id, 'original')
+    if trans_id_test != True: return trans_id_test
+    
+    # Perform space analysis.
+    img_path = get_temp_path(trans_id, 'data', 'data')[1]
+    flags_sr = build_flags(['filename', 'extension'], ['n_lsb'], request)
+    space = space_available(read_img(img_path), **flags_sa)
+    
+    # Hand back a JSON on success.
+    return jsonify({"space_required": "Route not yet complete."})
     
 #####################################
 # Encoding User Flow Complete Route #
@@ -103,17 +170,6 @@ def complete_encode():
     n_lsb_test = check_n_lsb(trans_id, n_lsb)
     if n_lsb_test != True: return n_lsb_test
     
-    # Obtain and validate the data file.
-    data_file = request.files.get('data_file', default=None)
-    if data_file is None: return reply_error_json('The data file was not received.')
-
-    # Check whether temp dir can handle this data file.
-    storage_test = validate_temp(data_file)
-    if storage_test != True: return storage_test
-    
-    # Store the data file and retain its path.
-    data_file_path = store_file_temp(trans_id, data_file, 'data', 'data')
-    
     
     # Define the lossless and lossy file formats.
     retainable_ext = ["bmp", "png", "dib"]
@@ -133,7 +189,6 @@ def complete_encode():
     img_bytes = read_file_bytes(trans_id, 'originals', 'orig')
     img_bytes = base64.encodebytes(img_bytes)
     img_bytes = img_bytes.decode('ascii')
-    #print(img_bytes)
     
     # Read the data file into bytes, and prep for HTTP.
     data_bytes = read_file_bytes(trans_id, 'data', 'data')
