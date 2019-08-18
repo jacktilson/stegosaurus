@@ -2,7 +2,6 @@
 b-container
   b-row
     b-col(sm="12")
-
       AccordionQA.mt-3(title="What is Stegosaurus?" :visible="true" accordionID="acc" answerID="qa1")
         b-row(no-gutters)
           b-col(lg="6")

@@ -2,12 +2,12 @@
   b-container
     b-row
       b-col(sm="12")
-        b-card.mt-3
-          b-card-title Encode Data
-          b-card-text Encode some data within a bitmap image file. The algorithm works by changing the colour
-            |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
-            | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
-            | channel with the data to be hidden, changing the actual value by the smallest amount.
+        AccordionQA.mt-3(title="Encode" :visible="showAbout" accordionID="acc" answerID="qa1")
+          b-card-body
+            b-card-text Encode some data within a bitmap image file. The algorithm works by changing the colour
+              |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
+              | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
+              | channel with the data to be hidden, changing the actual value by the smallest amount.
         b-collapse(v-model="showForm" id="showForm")
           form
             b-card.mt-3
@@ -102,38 +102,44 @@
                       min="1"
                       :max="imgMeta.bitDepth" 
                       v-model="nlsb")
-              b-collapse(:visible="showImgPreview" id="showSubmitButton")
+              b-collapse(:visible="showSubmitButton" id="showSubmitButton")
                 b-row
                   b-col(sm="12").d-flex
                     b-btn.m-4.w-100.btn-brand(v-on:click="submit" size="lg") Encode
         b-collapse(v-model="showLoading" id="showLoading")
-          scaling-squares-spinner(:animation-duration="1024" :size="128" color="#3F7F3F").mx-auto.my-4
-          b-card-title.text-center Encoding Your Data...
+          b-card.mt-3
+            scaling-squares-spinner(:animation-duration="1024" :size="128" color="#3F7F3F").mx-auto.my-4
+            b-card-title.text-center Encoding Your Data...
         b-collapse(v-model="showResult" id="showResult")
-          b-card-title Download your file below
-          b-btn.btn-brand(v-on:click="downloadResult") Download
+          b-card.mt-3
+            b-card-title Download your encoded file below
+            b-btn.btn-brand.btn-lg.w-100(v-on:click="downloadResult") Download
 
 </template>
 <script>
 import FileInput from "@/components/FileInput.vue";
 import ImageFileViewer from "@/components/ImageFileViewer.vue";
 import StockImageGetter from "@/components/StockImageGetter.vue";
+import AccordionQA from "@/components/AccordionQA.vue";
 import { ScalingSquaresSpinner } from "epic-spinners";
 import path from "path";
 import { saveAs } from "file-saver";
 import axios from 'axios';
+
 export default {
   name: "Encode",
-  components: { FileInput, ImageFileViewer, StockImageGetter, ScalingSquaresSpinner },
+  components: { FileInput, ImageFileViewer, StockImageGetter, ScalingSquaresSpinner, AccordionQA },
   data() {
     return {
       trans_id: "",
+
       //- Data file
       data: null,
       dataValid: false,
       dataUploaded: false,
       dataUploading: false,
       spaceRequired: 0,
+
       //- Img file
       img: null,
       imgValid: false,
@@ -148,11 +154,13 @@ export default {
         channels: 0,
         bitDepth: 8
       },
+
       //- Options
       encodeFilename: true,
       encodeFileExt: true,
       password: "",
       nlsb: 1,
+
       //- Status
       showForm: true,
       showLoading: false,
@@ -171,6 +179,9 @@ export default {
   },
   computed: {
     showImgPreview() {
+      return Boolean(this.img);
+    },
+    showSubmitButton() {
       return Boolean(this.img);
     },
     enableSubmit() {
@@ -207,6 +218,9 @@ export default {
         return this.data.size + " Bytes";
       else
         return "";
+    },
+    showAbout() {
+      return Boolean(!this.data);
     }
   },
   watch: {
@@ -304,7 +318,7 @@ export default {
       this.showResult = false;
       this.showForm = false;
       this.showLoading = true;
-      // Build formdata
+      //- Build formdata
       let formData = new FormData();
       formData.append("trans_id", this.trans_id);
       formData.append("n_lsb", this.nlsb);
@@ -326,6 +340,9 @@ export default {
           this.showResult = true;
         })
         .catch(error => {
+          this.showForm = true;
+          this.showLoading = false;
+          this.showResult = false;
           alert(error);
         })
     },
