@@ -32,6 +32,7 @@ body {
   min-height: 100vh;
   background-color: #1b092d;
   font-family: "Gill Sans MT", sans-serif;
+  font-size: 1.2em;
   color: #eeeeee;
 }
 
@@ -43,7 +44,7 @@ body {
   background: rgba(24, 11, 43, 0.8);
 }
 
-.btn {
+.btn-brand {
   border: 1px solid rgb(63, 127, 63);
   background-color: rgb(63, 127, 63);
   // border-radius: 5px;
