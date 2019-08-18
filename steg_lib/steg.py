@@ -164,7 +164,17 @@ def space_available(img: Img, **flags) -> int:
     free_indexes = indexes - header_size - ciel_div(subheader_size, n_lsb)
     free_bytes = ((free_indexes * n_lsb) // 8 ) - 72 
     return max(0, free_bytes)
-
+  
+def space_required(num_fname_bytes: int, num_ext_bytes: int, num_data_bytes: int) -> int:
+    """
+    Deduces the required number of pixels to encode a data file of size n_bytes
+    in an encoding configuration of 1 LSB. Assuming password is always encoded.
+    """
+    header_bytes = 24 # flags, n_lsb, length ext, length fname, length data, password salt.
+    bytes_required = num_fname_bytes + num_ext_bytes + num_data_bytes
+    pixels_required = ceil(bytes_required * (8/3)) # Each pixel fits 3 bits; 1/3 pixel per bit.
+    return pixels_required
+    
 def ciel_div(a: int, b: int):
     """Returns the cieling integer division of a and b"""
     return -(-a//b)
