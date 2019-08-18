@@ -85,7 +85,7 @@ def upload_data_encode():
   if data_file is None: return reply_error_json('Data file was not present in the POST request.')
   
   # Test if temp folder has capacity for this.
-  storage_test = validate_temp(img_file)
+  storage_test = validate_temp(data_file)
   if storage_test != True: return storage_test
   
   # Drop the image in relevant directory, retain path.
