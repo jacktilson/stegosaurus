@@ -20,6 +20,7 @@
                 dropPlaceholder="Drop a data file here..."
                 :filesizeLimit="134217728")
                 //- The filesize here is equivalent to 128MiB
+              b-card-text {{ getDataSize }}
               b-collapse(:visible='dataValid' id="showImg")
                 b-row
                   b-col(sm="auto")
@@ -60,16 +61,16 @@
                       label="Use Stock Image"
                       label-class="font-weight-bold"
                       description="Automatically find a stock image to use instead")
-                      StockImageGetter.w-100.btn-lg(v-model="img" v-on:clear="$refs['imgFileInput'].reset()"
-                        width="1920"
-                        height="1080")
+                      StockImageGetter.w-100.btn-lg.btn-brand(v-model="img" v-on:clear="$refs['imgFileInput'].reset()"
+                        :width="getStockWidth"
+                        :height="getStockHeight")
                 b-collapse(:visible='showImgPreview' id='showImgPreview')
                   b-card(no-body).overflow-hidden.mb-3
                     b-row(no-gutters)
                       b-col(lg="6")
                         ImageFileViewer(:imgFile="img").rounded-0.card-img
                       b-col(lg="6")
-                        b-card-body(:title="`Image: ${img?img.name:''}`")
+                        b-card-body(:title="imgMeta.name")
                           div(v-show="!imgUploading")
                             b-row
                               b-col(md="auto")
@@ -82,7 +83,8 @@
                                 b-card-text Bit Depth: {{imgMeta.bitDepth}}
                             b-row
                               b-col(md="auto")
-                                b-card-text Estimated Space: {{spaceAvailable}} Bytes
+                                b-card-text Estimated Space: {{ spaceAvailable }} Bytes
+                                b-card-text.text-danger(v-if="!dataFits") Image is too small for the data file.
                           div(v-show="imgUploading").pt-5
                             scaling-squares-spinner.mx-auto(
                               :animation-duration="1024"
@@ -103,13 +105,13 @@
               b-collapse(:visible="showImgPreview" id="showSubmitButton")
                 b-row
                   b-col(sm="12").d-flex
-                    b-button.m-4.w-100(v-on:click="submit" size="lg") Encode
+                    b-btn.m-4.w-100.btn-brand(v-on:click="submit" size="lg") Encode
         b-collapse(v-model="showLoading" id="showLoading")
           scaling-squares-spinner(:animation-duration="1024" :size="128" color="#3F7F3F").mx-auto.my-4
           b-card-title.text-center Encoding Your Data...
         b-collapse(v-model="showResult" id="showResult")
           b-card-title Download your file below
-          b-button(v-on:click="downloadResult") Download
+          b-btn.btn-brand(v-on:click="downloadResult") Download
 
 </template>
 <script>
@@ -140,6 +142,7 @@ export default {
       imgMetaWaiting: false,
       spaceAvailable: 0,
       imgMeta: {
+        name: "",
         width: 0,
         height: 0,
         channels: 0,
@@ -180,60 +183,89 @@ export default {
     extension() {
       var extension = path.extname(this.data.name);
       return extension.slice(extension.length > 0 ? 1 : 0);
+    },
+    dataFits() {
+      if(this.data && this.spaceAvailable > 0)
+        return this.data.size <= this.spaceAvailable;
+      else
+        return true;
+    },
+    getStockWidth() {
+      if(this.spaceRequired > 129600)
+        return Math.ceil(Math.sqrt((16/9)*this.spaceRequired));
+      else
+        return 480;
+    },
+    getStockHeight() {
+      if(this.spaceRequired > 129600)
+        return Math.ceil(Math.sqrt((9/16)*this.spaceRequired));
+      else
+        return 270;
+    },
+    getDataSize() {
+      if(this.data)
+        return this.data.size + " Bytes";
+      else
+        return "";
     }
   },
   watch: {
     data() {
-      this.dataUploaded = false;
-      this.dataUploading = true;
-      // Add the trans_id and the datafile to the formdata
-      let formData = new FormData();
-      formData.append("trans_id", this.trans_id);
-      formData.append("data_file", this.data);
-      // Post the data to the server, to associate a data file with the trans_id
-      axios
-        .post("/encode/data/upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
-        })
-        // eslint-disable-next-line
-        .then(response => {
-          this.dataUploaded = true;
-          this.dataUploading = false;
-          this.updateRequired();
-        })
-        .catch(error => {
-          alert(error);
-        })
+      if(this.dataFits) {
+        this.dataUploaded = false;
+        this.dataUploading = true;
+        // Add the trans_id and the datafile to the formdata
+        let formData = new FormData();
+        formData.append("trans_id", this.trans_id);
+        formData.append("data_file", this.data);
+        // Post the data to the server, to associate a data file with the trans_id
+        axios
+          .post("/encode/data/upload", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+          // eslint-disable-next-line
+          .then(response => {
+            this.dataUploaded = true;
+            this.dataUploading = false;
+            this.updateRequired();
+          })
+          .catch(error => {
+            alert(error);
+          })
+      }
     },
     img() {
-      this.imgUploaded = false;
-      this.imgUploading = true;
-      // Add the trans_id and the imgfile to the formdata
-      let formData = new FormData();
-      formData.append("trans_id", this.trans_id);
-      formData.append("img_file", this.img);
-      // Post the data to the server, to associate a data file with the trans_id
-      axios
-        .post("/encode/image/upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
-        })
-        // eslint-disable-next-line
-        .then(response => {
-          this.imgUploaded = true;
-          this.imgMeta.width = response.data.width;
-          this.imgMeta.height = response.data.height;
-          this.imgMeta.channels = response.data.channels;
-          this.imgMeta.bitDepth = response.data.bitdepth;
-          this.imgUploading = false;
-          this.updateSpace();
-        })
-        .catch(error => {
-          alert(error);
-        })
+      if(this.img) {
+        this.imgUploaded = false;
+        this.imgUploading = true;
+        this.imgMeta.name = this.img.name;
+        // Add the trans_id and the imgfile to the formdata
+        let formData = new FormData();
+        formData.append("trans_id", this.trans_id);
+        formData.append("img_file", this.img);
+        // Post the data to the server, to associate a data file with the trans_id
+        axios
+          .post("/encode/image/upload", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+          // eslint-disable-next-line
+          .then(response => {
+            this.imgUploaded = true;
+            this.imgMeta.width = response.data.width;
+            this.imgMeta.height = response.data.height;
+            this.imgMeta.channels = response.data.channels;
+            this.imgMeta.bitDepth = response.data.bitdepth;
+            this.imgUploading = false;
+            this.updateSpace();
+          })
+          .catch(error => {
+            alert(error);
+          })
+      }
     },
     nlsb() {
       this.updateSpace();
@@ -262,7 +294,7 @@ export default {
       axios
         .get("/encode/data/space", { params })
         .then(response => {
-          this.spaceRequired = response.data.space;
+          this.spaceRequired = response.data.space_required;
         })
         .catch(error => {
           alert(error);
