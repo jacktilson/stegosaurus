@@ -65,8 +65,8 @@ def upload_image_encode():
   img_meta = get_img_meta(read_img(img_abs_path))
   
   # Hand off information to client.
-  return jsonify({"trans_id": trans_id, "width": img_meta[0],
-                  "height": img_meta[1], "channels": img_meta[2],
+  return jsonify({"trans_id": trans_id, "height": img_meta[0],
+                  "width": img_meta[1], "channels": img_meta[2],
                   "bitdepth": img_meta[3]})
 
 ###########################################
