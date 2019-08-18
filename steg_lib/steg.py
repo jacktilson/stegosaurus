@@ -172,10 +172,10 @@ def space_required(num_fname_bytes: int, num_ext_bytes: int, num_data_bytes: int
     """
     header_bytes = 24 # flags, n_lsb, length ext, length fname, length data, password salt.
     bytes_required = num_fname_bytes + num_ext_bytes + num_data_bytes
-    pixels_required = ceil(bytes_required * (8/3)) # Each pixel fits 3 bits; 1/3 pixel per bit.
+    pixels_required = ciel_div(bytes_required * 8, 3) # Each pixel fits 3 bits; 1/3 pixel per bit.
     return pixels_required
     
-def ciel_div(a: int, b: int):
+def ciel_div(a: int, b: int) -> int:
     """Returns the cieling integer division of a and b"""
     return -(-a//b)
     
