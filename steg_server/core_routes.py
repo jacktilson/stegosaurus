@@ -139,7 +139,7 @@ def space_required_encode():
     
     # Obtain and validate transaction ID.
     trans_id = request.args.get('trans_id', default=None)
-    trans_id_test = check_trans_id(trans_id, 'original')
+    trans_id_test = check_trans_id(trans_id, 'data')
     if trans_id_test != True: return trans_id_test
     
     # Obtain filename.

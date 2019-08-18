@@ -146,6 +146,9 @@ def check_trans_id(trans_id, file_type):
       if not get_temp_path(trans_id, 'originals', 'orig')[0]:
         return reply_error_json('The transaction ID is not valid as there is no corresponding original image.')
     elif file_type == 'encoded':
+      if not get_temp_path(trans_id, 'data', 'data')[0]:
+        return reply_error_json('The transaction ID is not valid as there is no corresponding data file.')
+    elif file_type == 'encoded':
       if not get_temp_path(trans_id, 'encoded', 'encoded')[0]:
         return reply_error_json('The transaction ID is not valid as there is no corresponding encoded image.')
     else:
