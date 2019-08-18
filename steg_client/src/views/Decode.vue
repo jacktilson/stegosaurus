@@ -38,7 +38,7 @@ b-container
             b-collapse(id="imgFilePreviewCollapse" v-model="imgFile")
               b-card(no-body).overflow-hidden.mb-3
                 b-card-img(:src="imgFileDataString").rounded-0
-            b-button(v-on:click="submit") Decode
+            b-button.btn-brand(v-on:click="submit") Decode
         b-card-body(v-show="imgDownloadWaiting")
           scaling-squares-spinner.mx-auto.my-auto(
             v-show="imgDownloadWaiting"
@@ -48,7 +48,7 @@ b-container
           b-card-text.text-center Decoding Your Data...
         b-collapse(v-model="showResult")
             b-card-text Download your file below
-            b-button(v-on:click="downloadResult()") Download
+            b-button.btn-brand(v-on:click="downloadResult()") Download
 </template>
 <script>
 import axios from "axios";
