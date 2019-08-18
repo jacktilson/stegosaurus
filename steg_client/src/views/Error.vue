@@ -7,6 +7,5 @@
                     .card-body
                         h2 This page went extinct by the looks of things...
                         h2 Are you sure you meant to come here?
-                        router-link.btn.my-3(to="/encode") Go Back In Time
-
+                        router-link.btn.my-3.btn-lg.btn-brand(to="/encode") Go Back In Time
 </template>
