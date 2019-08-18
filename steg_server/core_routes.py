@@ -142,13 +142,22 @@ def space_required_encode():
     trans_id_test = check_trans_id(trans_id, 'original')
     if trans_id_test != True: return trans_id_test
     
-    # Perform space analysis.
-    img_path = get_temp_path(trans_id, 'data', 'data')[1]
-    flags_sr = build_flags(['filename', 'extension'], ['n_lsb'], request)
-    space = space_available(read_img(img_path), **flags_sa)
+    # Obtain filename.
+    filename = request.args.get('filename', default=None)
+    if filename is None: reply_error_json('The filename was not present in the request.')
+      
+    # Obtain filename.
+    extension = request.args.get('extension', default=None)
+    if extension is None: reply_error_json('The file extension was not present in the request.')
+    
+    # Perform analysis of how many pixels are ideal for the data file's target image.
+    num_data_bytes = len(read_file_bytes(trans_id, 'data', 'data'))
+    num_fname_bytes = len(filename.encode())
+    num_ext_bytes = len(extension.encode())
+    space_required = space_required(num_fname_bytes, num_ext_bytes, num_data_bytes)
     
     # Hand back a JSON on success.
-    return jsonify({"space_required": "Route not yet complete."})
+    return jsonify({"space_required": space_required})
     
 #####################################
 # Encoding User Flow Complete Route #
@@ -165,11 +174,10 @@ def complete_encode():
     trans_id_test = check_trans_id(trans_id, 'original')
     if trans_id_test != True: return trans_id_test
     
-    # Obtain and validate the proposed number of LSBs.
+    # Validate the proposed number of LSBs.
     n_lsb = int(request.form.get('n_lsb', default=1))
     n_lsb_test = check_n_lsb(trans_id, n_lsb)
     if n_lsb_test != True: return n_lsb_test
-    
     
     # Define the lossless and lossy file formats.
     retainable_ext = ["bmp", "png", "dib"]
@@ -195,7 +203,7 @@ def complete_encode():
     data_bytes = base64.encodebytes(data_bytes)
     data_bytes = data_bytes.decode('ascii')
     
-    # Process the encoding, feeding original image path, data file path and flags to encode function.
+    # Check possible flags against what was actually sent in the request, build flags ready for encode.
     flags_enc = build_flags(['filename', 'extension', 'password'], ['n_lsb'], request)
     
     # Prepare to send to S3.
