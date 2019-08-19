@@ -124,11 +124,17 @@ import AccordionQA from "@/components/AccordionQA.vue";
 import { ScalingSquaresSpinner } from "epic-spinners";
 import path from "path";
 import { saveAs } from "file-saver";
-import axios from 'axios';
+import axios from "axios";
 
 export default {
   name: "Encode",
-  components: { FileInput, ImageFileViewer, StockImageGetter, ScalingSquaresSpinner, AccordionQA },
+  components: {
+    FileInput,
+    ImageFileViewer,
+    StockImageGetter,
+    ScalingSquaresSpinner,
+    AccordionQA
+  },
   data() {
     return {
       trans_id: "",
@@ -164,7 +170,7 @@ export default {
       //- Status
       showForm: true,
       showLoading: false,
-      showResult: false,
+      showResult: false
     };
   },
   created() {
@@ -175,7 +181,7 @@ export default {
       })
       .catch(error => {
         alert(error);
-      })
+      });
   },
   computed: {
     showImgPreview() {
@@ -196,36 +202,29 @@ export default {
       return extension.slice(extension.length > 0 ? 1 : 0);
     },
     dataFits() {
-      if(this.data && this.spaceAvailable > 0)
+      if (this.data && this.spaceAvailable > 0)
         return this.data.size <= this.spaceAvailable;
-      else
-        return true;
+      else return true;
     },
     getStockWidth() {
-      if(this.spaceRequired > 25000000)
-        return 5000;
-      if(this.spaceRequired > 7800000)
+      if (this.spaceRequired > 25000000) return 5000;
+      if (this.spaceRequired > 7800000)
         return Math.ceil(Math.sqrt(this.spaceRequired));
-      if(this.spaceRequired > 129600)
-        return Math.ceil(Math.sqrt((16/9)*this.spaceRequired));
-      else
-        return 480;
+      if (this.spaceRequired > 129600)
+        return Math.ceil(Math.sqrt((16 / 9) * this.spaceRequired));
+      else return 480;
     },
     getStockHeight() {
-      if(this.spaceRequired > 25000000)
-        return 5000;
-      if(this.spaceRequired > 7800000)
+      if (this.spaceRequired > 25000000) return 5000;
+      if (this.spaceRequired > 7800000)
         return Math.ceil(Math.sqrt(this.spaceRequired));
-      if(this.spaceRequired > 129600)
-        return Math.ceil(Math.sqrt((9/16)*this.spaceRequired));
-      else
-        return 270;
+      if (this.spaceRequired > 129600)
+        return Math.ceil(Math.sqrt((9 / 16) * this.spaceRequired));
+      else return 270;
     },
     getDataSize() {
-      if(this.data)
-        return this.data.size + " Bytes";
-      else
-        return "";
+      if (this.data) return this.data.size + " Bytes";
+      else return "";
     },
     showAbout() {
       return Boolean(!this.data);
@@ -233,7 +232,7 @@ export default {
   },
   watch: {
     data() {
-      if(this.dataFits) {
+      if (this.dataFits) {
         this.dataUploaded = false;
         this.dataUploading = true;
         // Add the trans_id and the datafile to the formdata
@@ -255,11 +254,11 @@ export default {
           })
           .catch(error => {
             alert(error);
-          })
+          });
       }
     },
     img() {
-      if(this.img) {
+      if (this.img) {
         this.imgUploaded = false;
         this.imgUploading = true;
         this.imgMeta.name = this.img.name;
@@ -286,7 +285,7 @@ export default {
           })
           .catch(error => {
             alert(error);
-          })
+          });
       }
     },
     nlsb() {
@@ -296,8 +295,7 @@ export default {
   methods: {
     updateSpace() {
       var params = { trans_id: this.trans_id };
-      if(this.nlsb > 1)
-        params.n_lsb = this.nlsb;
+      if (this.nlsb > 1) params.n_lsb = this.nlsb;
       axios
         .get("/encode/image/space", { params })
         .then(response => {
@@ -305,14 +303,12 @@ export default {
         })
         .catch(error => {
           alert(error);
-        })
+        });
     },
     updateRequired() {
       var params = { trans_id: this.trans_id };
-      if(this.encodeFilename)
-        params.filename = this.filename;
-      if(this.encodeFileExt)
-        params.extension = this.extension;
+      if (this.encodeFilename) params.filename = this.filename;
+      if (this.encodeFileExt) params.extension = this.extension;
       axios
         .get("/encode/data/space", { params })
         .then(response => {
@@ -320,7 +316,7 @@ export default {
         })
         .catch(error => {
           alert(error);
-        })
+        });
     },
     submit() {
       this.showResult = false;
@@ -330,18 +326,16 @@ export default {
       let formData = new FormData();
       formData.append("trans_id", this.trans_id);
       formData.append("n_lsb", this.nlsb);
-      if(this.encodeFilename)
-        formData.append("filename", this.filename);
-      if(this.encodeFileExt)
-        formData.append("extension", this.extension);
-      if(this.password)
-        formData.append("password", this.password);
+      if (this.encodeFilename) formData.append("filename", this.filename);
+      if (this.encodeFileExt) formData.append("extension", this.extension);
+      if (this.password) formData.append("password", this.password);
       axios
         .post("/encode/complete", formData, {
           headers: {
             "Content-Type": "multipart/form-data"
           }
         })
+        // eslint-disable-next-line
         .then(response => {
           this.showForm = false;
           this.showLoading = false;
@@ -352,7 +346,7 @@ export default {
           this.showLoading = false;
           this.showResult = false;
           alert(error);
-        })
+        });
     },
     downloadResult() {
       axios
@@ -371,7 +365,7 @@ export default {
         .catch(error => {
           alert(error);
         });
-    },
+    }
   }
 };
 </script>

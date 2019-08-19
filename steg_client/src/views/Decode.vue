@@ -56,7 +56,12 @@ import { ScalingSquaresSpinner } from "epic-spinners";
 
 export default {
   name: "Decode",
-  components: { ScalingSquaresSpinner, FileInput, ImageFileViewer, AccordionQA },
+  components: {
+    ScalingSquaresSpinner,
+    FileInput,
+    ImageFileViewer,
+    AccordionQA
+  },
   data() {
     return {
       //- Img file
@@ -91,8 +96,7 @@ export default {
       //- Build formdata
       let formData = new FormData();
       formData.append("img_file", this.img);
-      if (this.password)
-        formData.append("password", this.password);
+      if (this.password) formData.append("password", this.password);
       axios
         .post("/decode/process", formData, {
           headers: {
