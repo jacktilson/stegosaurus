@@ -11,8 +11,8 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 Vue.use(BootstrapVue);
 
-library.add(faBars)
-library.add(faArrowCircleDown)
+library.add(faBars);
+library.add(faArrowCircleDown);
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 
 Vue.config.productionTip = false;
