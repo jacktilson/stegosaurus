@@ -202,12 +202,20 @@ export default {
         return true;
     },
     getStockWidth() {
+      if(this.spaceRequired > 25000000)
+        return 5000;
+      if(this.spaceRequired > 7800000)
+        return Math.ceil(Math.sqrt(this.spaceRequired));
       if(this.spaceRequired > 129600)
         return Math.ceil(Math.sqrt((16/9)*this.spaceRequired));
       else
         return 480;
     },
     getStockHeight() {
+      if(this.spaceRequired > 25000000)
+        return 5000;
+      if(this.spaceRequired > 7800000)
+        return Math.ceil(Math.sqrt(this.spaceRequired));
       if(this.spaceRequired > 129600)
         return Math.ceil(Math.sqrt((9/16)*this.spaceRequired));
       else
