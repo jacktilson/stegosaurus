@@ -2,278 +2,332 @@
   b-container
     b-row
       b-col(sm="12")
-        b-card.mt-3
-          b-card-title Encode Data
-          b-card-text Encode some data within a bitmap image file. The algorithm works by changing the colour
-            |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
-            | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
-            | channel with the data to be hidden, changing the actual value by the smallest amount.
-        b-card.my-3
-          b-collapse(v-model="showForm")
-            form
-              b-form-group(
-                label="Image File"
-                label-for="input-imgFile"
-                label-class="font-weight-bold"
-                :description="validImgFile?'':'Enter an image file to hide your data inside.'"
-                :state="validImgFile"
-                :invalid-feedback="feedbackInvalidImgFile"
-                :valid-feedback="feedbackValidImgFile")
-                  b-form-file(
-                    id="input-imgFile"
-                    v-model="imgFile"
-                    placeholder="Choose a bmp/png file..."
-                    drop-placeholder="Drop a bmp/png file here to encode to..."
-                    :state="validImgFile")
-              b-collapse(v-model="showImgInfo").mb-3
-                b-card(no-body).overflow-hidden
-                  b-row(no-gutters)
-                    b-col(lg="6")
-                      b-card-img(:src="imgFileDataString").rounded-0
-                    b-col(lg="6")
-                      b-card-body(:title="`Image: ${imgFile?imgFile.name:''}`")
-                        div(v-show="!imageUploading")
-                          b-card-sub-title Image Info
-                          b-row
-                            b-col(md="auto")
-                              b-card-text Width: {{imgMeta.width}}
-                            b-col(md="auto")
-                              b-card-text Height: {{imgMeta.height}}
-                            b-col(md="auto")
-                              b-card-text Channels: {{imgMeta.channels}}
-                            b-col(md="auto")
-                              b-card-text Bit Depth: {{imgMeta.bitDepth}}
-                        div(v-show="!spaceWaiting")
-                          b-row
-                            b-col(md="auto")
-                              b-card-text Estimated Space: {{space}} Bytes
-                        div(v-show="imageUploading || spaceWaiting").pt-5
-                          scaling-squares-spinner.mx-auto(
-                            animation-duration="1024"
-                            size="64"
-                            color="#3F7F3F")
-                          b-card-text.text-center Loading...
-
-              b-collapse(v-model="showDataInput")
+        AccordionQA.mt-3(title="Encode" :visible="showAbout" accordionID="acc" answerID="qa1")
+          b-card-body
+            b-card-text Encode some data within a bitmap image file. The algorithm works by changing the colour
+              |  values of the pixels of an image, embedding the data within the image. If the encoding is good, the
+              | data will be undetectable to the naked eye. It overwrites the least significant bits of each colour
+              | channel with the data to be hidden, changing the actual value by the smallest amount.
+        b-collapse(v-model="showForm" id="showForm")
+          form
+            b-card.mt-3
+              File-Input(
+                v-model="data"
+                @isValid="dataValid = $event"
+                label="Data File"
+                description="Enter a data file to hide your data inside"
+                placeholder="Choose a data file..."
+                dropPlaceholder="Drop a data file here..."
+                :filesizeLimit="134217728")
+                //- The filesize here is equivalent to 128MiB
+              b-card-text {{ getDataSize }}
+              b-collapse(:visible='dataValid' id="showImg")
+                b-row
+                  b-col(sm="auto")
+                    b-form-group
+                      b-form-checkbox(v-model="encodeFilename" ) Encode data file name
+                  b-col(sm="auto")
+                    b-form-group
+                      b-form-checkbox(v-model="encodeFileExt" ) Encode data file extension
                 b-form-group(
-                  label="Data File"
-                  label-for="input-dataFile"
+                  label="Password"
                   label-class="font-weight-bold"
-                  :description="dataFile?'':'Enter a data file to encode onto the image'"
-                  :state="validDataFile"
-                  :invalid-feedback="feedbackInvalidDataFile"
-                  :valid-feedback="feedbackValidDataFile"
-                )
-                  b-form-file(
-                    v-model="dataFile"
-                    :state="dataFile"
-                    placeholder="Choose file to encode on to image..."
-                    drop-placeholder="Drop file here to encode onto image...")
-              b-collapse(v-model="showEncodeSettings")
-                b-form-group(
-                  label="Encoding Settings"
-                  label-class="font-weight-bold"
-                )
+                  description="This is optional, you do not have to give the data a password")
+                  b-form-input(
+                    v-model="password"
+                    type="password"
+                    placeholder="Enter a password to encrypt the data"
+                    size="lg")
+            b-collapse(:visible='dataValid' id="showImgOptions")
+              b-card.mt-3
+                b-row
+                  b-col(lg="5")
+                    File-Input(
+                      v-model="img"
+                      ref="imgFileInput"
+                      :isValid="imgValid"
+                      label="Image Upload"
+                      description="Upload an image here to encode your data inside"
+                      placeholder="Choose an image..."
+                      dropPlaceholder="Drop an image here.."
+                      :filesizeLimit="134217728"
+                      :fileTypes="['.jpg', '.png', '.bmp', '.tiff', '.jpeg']"
+                      :mimeTypes="['image/jpeg', 'image/png', 'image/bmp', 'image/tiff']")
+                  b-col(lg="2").my-auto.text-center
+                    b-card-title or
+                  b-col(lg="5")
+                    b-form-group(
+                      label-for="useStock"
+                      label="Use Stock Image"
+                      label-class="font-weight-bold"
+                      description="Automatically find a stock image to use instead")
+                      StockImageGetter.w-100.btn-lg.btn-brand(v-model="img" v-on:clear="$refs['imgFileInput'].reset()"
+                        :width="getStockWidth"
+                        :height="getStockHeight")
+                b-collapse(:visible='showImgPreview' id='showImgPreview')
+                  b-card(no-body).overflow-hidden.mb-3
+                    b-row(no-gutters)
+                      b-col(lg="6")
+                        ImageFileViewer(:imgFile="img").rounded-0.card-img
+                      b-col(lg="6")
+                        b-card-body(:title="imgMeta.name")
+                          div(v-show="!imgUploading")
+                            b-row
+                              b-col(md="auto")
+                                b-card-text Width: {{imgMeta.width}}
+                              b-col(md="auto")
+                                b-card-text Height: {{imgMeta.height}}
+                              b-col(md="auto")
+                                b-card-text Channels: {{imgMeta.channels}}
+                              b-col(md="auto")
+                                b-card-text Bit Depth: {{imgMeta.bitDepth}}
+                            b-row
+                              b-col(md="auto")
+                                b-card-text Estimated Space: {{ spaceAvailable }} Bytes
+                                b-card-text.text-danger(v-if="!dataFits") Image is too small for the data file.
+                          div(v-show="imgUploading").pt-5
+                            scaling-squares-spinner.mx-auto(
+                              :animation-duration="1024"
+                              :size="64"
+                              color="#3F7F3F")
+                            b-card-text.text-center Loading...
                   b-form-group(
-                    :label="`Bits: ${nBits}`"
-                    label-for="input-nBits"
+                    :label="`Bits: ${nlsb}`"
+                    label-for="input-nlsb"
                     label-cols-lg="2"
-                    description="The number of bits to overwrite per channel of the image"
-                  )
+                    description="The number of bits to overwrite per channel of the image")
                     b-form-input(
-                      id="nBitsInput"
+                      id="input-nlsb"
                       type="range"
                       min="1"
                       :max="imgMeta.bitDepth" 
-                      v-model="nBits"
-                    )
-                  b-form-group(
-                    label="Password"
-                    description="This is optional, you do not have to give the data a password"
-                    label-cols-lg="2"
-                  )
-                    b-form-input(
-                      v-model="password"
-                      type="password"
-                      placeholder="Enter a password to encrypt the data"
-                    )
-                  b-form-group
-                    b-form-checkbox(v-model="encodeFilename" ) Encode data file name
-                  b-form-group
-                    b-form-checkbox(v-model="encodeFileExt" ) Encode data file extension
-              b-button(v-on:click="submit" :disabled='!enableSubmit') Encode
-          b-collapse(v-model="showWaiting")
-            scaling-squares-spinner(animation-duration="1024" size="128" color="#3F7F3F").mx-auto.my-4
+                      v-model="nlsb")
+              b-collapse(:visible="showSubmitButton" id="showSubmitButton")
+                b-row
+                  b-col(sm="12").d-flex
+                    b-btn.m-4.w-100.btn-brand(v-on:click="submit" size="lg") Encode
+        b-collapse(v-model="showLoading" id="showLoading")
+          b-card.mt-3
+            scaling-squares-spinner(:animation-duration="1024" :size="128" color="#3F7F3F").mx-auto.my-4
             b-card-title.text-center Encoding Your Data...
-          b-collapse(v-model="showResult")
-            b-card-title Download your file below
-            b-button(v-on:click="downloadResult") Download
+        b-collapse(v-model="showResult" id="showResult")
+          b-card.mt-3
+            b-card-title Download your encoded file below
+            b-btn.btn-brand.btn-lg.w-100(v-on:click="downloadResult") Download
+
 </template>
 <script>
-import axios from "axios";
+import FileInput from "@/components/FileInput.vue";
+import ImageFileViewer from "@/components/ImageFileViewer.vue";
+import StockImageGetter from "@/components/StockImageGetter.vue";
+import AccordionQA from "@/components/AccordionQA.vue";
+import { ScalingSquaresSpinner } from "epic-spinners";
 import path from "path";
 import { saveAs } from "file-saver";
-import { ScalingSquaresSpinner } from "epic-spinners";
-
-let INVALID = 0;
-let VALID = 1;
-let SUBMITTED = 2;
-let RESULT = 3;
+import axios from 'axios';
 
 export default {
   name: "Encode",
-  components: { ScalingSquaresSpinner },
+  components: { FileInput, ImageFileViewer, StockImageGetter, ScalingSquaresSpinner, AccordionQA },
   data() {
     return {
-      formState: INVALID,
-      nBits: 1,
-      password: null,
-      dataFile: null,
-      imgFile: null,
-      imgFileDataString: "",
+      trans_id: "",
+
+      //- Data file
+      data: null,
+      dataValid: false,
+      dataUploaded: false,
+      dataUploading: false,
+      spaceRequired: 0,
+
+      //- Img file
+      img: null,
+      imgValid: false,
+      imgUploaded: false,
+      imgUploading: false,
+      imgMetaWaiting: false,
+      spaceAvailable: 0,
       imgMeta: {
+        name: "",
         width: 0,
         height: 0,
         channels: 0,
-        bitDepth: 0
+        bitDepth: 8
       },
-      encodeFilename: false,
-      encodeFileExt: false,
-      trans_id: "",
-      space: 0,
-      imageUploading: false,
-      spaceWaiting: false,
-      imgInfoWaiting: false
+
+      //- Options
+      encodeFilename: true,
+      encodeFileExt: true,
+      password: "",
+      nlsb: 1,
+
+      //- Status
+      showForm: true,
+      showLoading: false,
+      showResult: false,
     };
   },
+  created() {
+    axios
+      .get("/encode/init")
+      .then(response => {
+        this.trans_id = response.data.trans_id;
+      })
+      .catch(error => {
+        alert(error);
+      })
+  },
   computed: {
-    validImgFile() {
-      return (
-        Boolean(this.imgFile) &&
-        ["image/bmp", "image/png"].includes(this.imgFile.type)
-      );
+    showImgPreview() {
+      return Boolean(this.img);
     },
-    feedbackValidImgFile() {
-      return this.validImgFile ? "Awesome!" : "";
-    },
-    feedbackInvalidImgFile() {
-      if (this.imgFile) {
-        if (!["image/bmp", "image/png"].includes(this.imgFile.type)) {
-          return "Needs to be a .bmp or a .png";
-        }
-      }
-      return "";
-    },
-    validDataFile() {
-      return Boolean(this.dataFile) && this.dataFile.size <= this.space;
-    },
-    feedbackValidDataFile() {
-      return this.validDataFile ? "Awesome!" : "";
-    },
-    feedbackInvalidDataFile() {
-      if (this.dataFile) {
-        if (this.dataFile.size > this.space) {
-          return "Data file too large for that image on these settings.";
-        }
-      }
-      return "";
-    },
-    showForm() {
-      return [INVALID, VALID].includes(this.formState);
+    showSubmitButton() {
+      return Boolean(this.img);
     },
     enableSubmit() {
-      return this.formState == VALID;
+      return this.imgUploaded && this.dataUploaded;
     },
-    showImgInfo() {
-      return this.showForm && this.validImgFile;
+    filename() {
+      var extension = path.extname(this.data.name);
+      return path.basename(this.data.name, extension);
     },
-    showDataInput() {
-      return this.showForm && this.validImgFile;
+    extension() {
+      var extension = path.extname(this.data.name);
+      return extension.slice(extension.length > 0 ? 1 : 0);
     },
-    showEncodeSettings() {
-      return this.showForm && this.showDataInput && this.dataFile;
+    dataFits() {
+      if(this.data && this.spaceAvailable > 0)
+        return this.data.size <= this.spaceAvailable;
+      else
+        return true;
     },
-    showWaiting() {
-      return this.formState === SUBMITTED;
+    getStockWidth() {
+      if(this.spaceRequired > 129600)
+        return Math.ceil(Math.sqrt((16/9)*this.spaceRequired));
+      else
+        return 480;
     },
-    showResult() {
-      return this.formState === RESULT;
+    getStockHeight() {
+      if(this.spaceRequired > 129600)
+        return Math.ceil(Math.sqrt((9/16)*this.spaceRequired));
+      else
+        return 270;
+    },
+    getDataSize() {
+      if(this.data)
+        return this.data.size + " Bytes";
+      else
+        return "";
+    },
+    showAbout() {
+      return Boolean(!this.data);
     }
   },
   watch: {
-    imgFile(val, oldval) {
-      if (this.validImgFile) {
-        this.imageUploading = true;
-        this.spaceWaiting = true;
-        // check the input actually has a valid file in it
-        let reader = new FileReader(); // File reader object for converting file to base64
-        reader.onload = event => {
-          this.imgFileDataString = event.target.result;
-        };
-        reader.readAsDataURL(this.imgFile); // Start the reader, calls above function on completion
-
-        //also trigger upload of file to server
+    data() {
+      if(this.dataFits) {
+        this.dataUploaded = false;
+        this.dataUploading = true;
+        // Add the trans_id and the datafile to the formdata
         let formData = new FormData();
-        formData.append("img_file", this.imgFile);
-
+        formData.append("trans_id", this.trans_id);
+        formData.append("data_file", this.data);
+        // Post the data to the server, to associate a data file with the trans_id
         axios
-          .post("/encode/upload", formData, {
+          .post("/encode/data/upload", formData, {
             headers: {
               "Content-Type": "multipart/form-data"
             }
           })
+          // eslint-disable-next-line
           .then(response => {
-            this.trans_id = response.data.trans_id;
+            this.dataUploaded = true;
+            this.dataUploading = false;
+            this.updateRequired();
+          })
+          .catch(error => {
+            alert(error);
+          })
+      }
+    },
+    img() {
+      if(this.img) {
+        this.imgUploaded = false;
+        this.imgUploading = true;
+        this.imgMeta.name = this.img.name;
+        // Add the trans_id and the imgfile to the formdata
+        let formData = new FormData();
+        formData.append("trans_id", this.trans_id);
+        formData.append("img_file", this.img);
+        // Post the data to the server, to associate a data file with the trans_id
+        axios
+          .post("/encode/image/upload", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+          // eslint-disable-next-line
+          .then(response => {
+            this.imgUploaded = true;
             this.imgMeta.width = response.data.width;
             this.imgMeta.height = response.data.height;
             this.imgMeta.channels = response.data.channels;
             this.imgMeta.bitDepth = response.data.bitdepth;
-            this.imageUploading = false;
+            this.imgUploading = false;
             this.updateSpace();
           })
           .catch(error => {
             alert(error);
-          });
+          })
       }
     },
-    dataFile(val, oldval) {
-      this.updateSpace();
-    },
-    nBits(val, oldval) {
-      this.updateSpace();
-    },
-    encodeFilename(val, oldval) {
-      this.updateSpace();
-    },
-    encodeFileExt(val, oldval) {
+    nlsb() {
       this.updateSpace();
     }
   },
   methods: {
+    updateSpace() {
+      var params = { trans_id: this.trans_id };
+      if(this.nlsb > 1)
+        params.n_lsb = this.nlsb;
+      axios
+        .get("/encode/image/space", { params })
+        .then(response => {
+          this.spaceAvailable = response.data.space_available;
+        })
+        .catch(error => {
+          alert(error);
+        })
+    },
+    updateRequired() {
+      var params = { trans_id: this.trans_id };
+      if(this.encodeFilename)
+        params.filename = this.filename;
+      if(this.encodeFileExt)
+        params.extension = this.extension;
+      axios
+        .get("/encode/data/space", { params })
+        .then(response => {
+          this.spaceRequired = response.data.space_required;
+        })
+        .catch(error => {
+          alert(error);
+        })
+    },
     submit() {
-      this.formState = SUBMITTED;
-
-      // Build formdata
+      this.showResult = false;
+      this.showForm = false;
+      this.showLoading = true;
+      //- Build formdata
       let formData = new FormData();
-      formData.append("data_file", this.dataFile);
       formData.append("trans_id", this.trans_id);
-      formData.append("n_lsb", this.nBits);
-      if (this.password) {
+      formData.append("n_lsb", this.nlsb);
+      if(this.encodeFilename)
+        formData.append("filename", this.filename);
+      if(this.encodeFileExt)
+        formData.append("extension", this.extension);
+      if(this.password)
         formData.append("password", this.password);
-      }
-      var extension = path.extname(this.dataFile.name);
-      var filename = path.basename(this.dataFile.name, extension);
-      if (this.encodeFileExt) {
-        formData.append(
-          "extension",
-          extension.slice(extension.length > 0 ? 1 : 0)
-        );
-      }
-      if (this.encodeFilename) {
-        formData.append("filename", filename);
-      }
-
-      // Post it
       axios
         .post("/encode/complete", formData, {
           headers: {
@@ -281,13 +335,17 @@ export default {
           }
         })
         .then(response => {
-          this.formState = RESULT;
+          this.showForm = false;
+          this.showLoading = false;
+          this.showResult = true;
         })
         .catch(error => {
+          this.showForm = true;
+          this.showLoading = false;
+          this.showResult = false;
           alert(error);
-        });
+        })
     },
-
     downloadResult() {
       axios
         .get("/encode/download", {
@@ -306,48 +364,6 @@ export default {
           alert(error);
         });
     },
-
-    updateSpace() {
-      this.spaceWaiting = true;
-      // Build params for space request
-      var params = { trans_id: this.trans_id };
-      if (this.dataFile) {
-        var ext = path.extname(this.dataFile.name);
-        var filename = path.basename(this.dataFile.name, ext);
-        if (this.encodeFilename) {
-          params.filename = filename;
-        }
-        if (this.encodeFileExt) {
-          params.extension = ext.slice(ext.length > 0 ? 1 : 0); // remove the dot from the extension
-        }
-      }
-      if (this.nBits > 1) {
-        params.n_lsb = this.nBits;
-      }
-
-      // Post it
-      axios
-        .get("/encode/space", { params })
-        .then(response => {
-          this.space = response.data.space_available;
-          this.imgInfoWaiting = false;
-          this.spaceWaiting = false;
-          this.validateForm();
-        })
-        .catch(error => {
-          alert(error);
-        });
-    },
-
-    validateForm() {
-      if (![SUBMITTED, RESULT].includes(this.formState)) {
-        if (this.validImgFile && this.validDataFile) {
-          this.formState = VALID;
-        } else {
-          this.formState = INVALID;
-        }
-      }
-    }
   }
 };
 </script>

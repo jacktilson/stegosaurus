@@ -2,12 +2,11 @@
 b-container
   b-row
     b-col(sm="12")
-
       AccordionQA.mt-3(title="What is Stegosaurus?" :visible="true" accordionID="acc" answerID="qa1")
         b-row(no-gutters)
           b-col(lg="6")
             b-card-body
-              Vue-Markdown.card-text.text-center(source="Stegosaurus is an image steganography tool allowing users to hide data inside a simple image file. It offers the following features:  \n- **LSB Encoding** of a file in a range of image formats (bmp, png, jpeg and others)  \n- **Encryption** using AES-256 and a password of your choice  \n- Storing the **filename** and **extension** of your data in the image as well as the file contents  \n- Specifying the level of **quality/space tradeoff** in the image")
+              Vue-Markdown.card-text.text-center(source="Stegosaurus is an image steganography tool allowing users to hide data inside a simple image file. It offers the following features:  \n- **LSB Encoding** of a file in a range of image formats (bmp, png, jpeg and others)  \n- **Encryption** using AES-128-CBC (Cipher Block Chaining) and a password of your choice  \n- Storing the **filename** and **extension** of your data in the image as well as the file contents  \n- Specifying the level of **quality/space tradeoff** in the image")
           b-col(lg="6").d-flex
             b-card-img.rounded-0.my-auto(src="@/assets/ct_logo.svg" height="192px")
 
