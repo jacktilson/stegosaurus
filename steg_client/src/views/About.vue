@@ -21,17 +21,23 @@ b-container
           Vue-Markdown.card-text.text-center(source="This single page app was built using the progressive **VueJS** framework for front end development. This means that there is no server-side rendering; the entire site is downloaded once and rendered using client-side **JavaScript**. This reduces server load, and ensures no blank screens when navigating between pages on the site, giving it a snappy feel.")
           b-row
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/vue_logo.svg" height="128px").mx-auto.my-4
+              b-link(href="https://vuejs.org/")
+                b-img(src="@/assets/vue_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/javascript_logo.svg" height="128px").mx-auto.my-4
+              b-link(href="https://www.javascript.com/")
+                b-img(src="@/assets/javascript_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/bootstrap_logo.svg" height="128px").mx-auto.my-4
+              b-link(href="https://bootstrap-vue.js.org/")
+                b-img(src="@/assets/bootstrap_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/pug_logo.svg" height="128px").mx-auto.my-4 
+              b-link(href="https://pugjs.org/")
+                b-img(src="@/assets/pug_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/html5_logo.svg" height="128px").mx-auto.my-4
+              b-link(href="https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5")
+                b-img(src="@/assets/html5_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/css3_logo.svg" height="128px").mx-auto.my-4
+              b-link(href="https://developer.mozilla.org/en-US/docs/Archive/CSS3")
+              b-img(src="@/assets/css3_logo.svg" ).mx-auto.my-4.icon
       
       AccordionQA(title="What about the back end?" accordionID="acc" answerID="qa4")
         b-card-body
@@ -39,29 +45,42 @@ b-container
             VueMarkdown The backend of the site has been coded in **Python** using the **Flask** framework and our bespoke steganography tool. It is also utilising **Amazon**'s cloud infrastructure for hosting, innovatively using it's FAAS tool **Lambda** (Functions as a servcie) for our compute heavy code.
           b-row
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/python_logo.svg" height="128px").mx-auto.my-4
+              b-link(href="https://www.python.org/")
+                b-img(src="@/assets/python_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/flask_logo.svg" height="128px").mx-auto.my-4
+              b-link(href="https://flask.palletsprojects.com/en/1.0.x/")
+                b-img(src="@/assets/flask_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/aws_logo.svg" height="128px").mx-auto.my-4
+              b-link(href="https://aws.amazon.com/")
+                b-img(src="@/assets/aws_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/aws_lambda_logo.svg" height="128px").mx-auto.my-4 
+              b-link(href="https://aws.amazon.com/lambda/")
+                b-img(src="@/assets/aws_lambda_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/opencv_logo.svg" height="128px").mx-auto.my-4
+              b-link(href="https://opencv.org/")
+                b-img(src="@/assets/opencv_logo.svg").mx-auto.my-4.icon
             b-col(cols="6" md="3").d-flex.mx-auto
-              b-img(src="@/assets/nginx_logo.svg" width="128px").mx-auto.my-4
-
+              b-link(href="https://www.nginx.com/")
+                b-img(src="@/assets/nginx_logo.svg" width="128px").mx-auto.my-4.icon
 </template>
 <script>
-import VueMarkdown from 'vue-markdown';
+import VueMarkdown from "vue-markdown";
 import AccordionQA from "@/components/AccordionQA.vue";
 
 export default {
-  components: {VueMarkdown, AccordionQA}
-}
+  components: { VueMarkdown, AccordionQA }
+};
 </script>
 <style scoped>
-  .cursor-pointer{
-    cursor: pointer
-  }
+.cursor-pointer {
+  cursor: pointer;
+}
+.icon:hover {
+  height: 145px;
+  transition: 512ms;
+}
+.icon {
+  height: 128px;
+  transition: 512ms;
+}
 </style>
