@@ -232,30 +232,28 @@ export default {
   },
   watch: {
     data() {
-      if (this.dataFits) {
-        this.dataUploaded = false;
-        this.dataUploading = true;
-        // Add the trans_id and the datafile to the formdata
-        let formData = new FormData();
-        formData.append("trans_id", this.trans_id);
-        formData.append("data_file", this.data);
-        // Post the data to the server, to associate a data file with the trans_id
-        axios
-          .post("/encode/data/upload", formData, {
-            headers: {
-              "Content-Type": "multipart/form-data"
-            }
-          })
-          // eslint-disable-next-line
-          .then(response => {
-            this.dataUploaded = true;
-            this.dataUploading = false;
-            this.updateRequired();
-          })
-          .catch(error => {
-            alert(error);
-          });
-      }
+      this.dataUploaded = false;
+      this.dataUploading = true;
+      // Add the trans_id and the datafile to the formdata
+      let formData = new FormData();
+      formData.append("trans_id", this.trans_id);
+      formData.append("data_file", this.data);
+      // Post the data to the server, to associate a data file with the trans_id
+      axios
+        .post("/encode/data/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        })
+        // eslint-disable-next-line
+        .then(response => {
+          this.dataUploaded = true;
+          this.dataUploading = false;
+          this.updateRequired();
+        })
+        .catch(error => {
+          alert(error);
+        });
     },
     img() {
       if (this.img) {
