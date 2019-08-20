@@ -123,7 +123,7 @@ import AccordionQA from "@/components/AccordionQA.vue";
 import { ScalingSquaresSpinner } from "epic-spinners";
 import path from "path";
 import { saveAs } from "file-saver";
-import axios from 'axios';
+import axios from "axios";
 
 export default {
   name: "Encode",
@@ -167,7 +167,7 @@ export default {
       //- Status
       showForm: true,
       showLoading: false,
-      showResult: false,
+      showResult: false
     };
   },
   created() {
@@ -178,7 +178,7 @@ export default {
       })
       .catch(error => {
         alert(error);
-      })
+      });
   },
   computed: {
     showImgPreview() {
@@ -264,11 +264,11 @@ export default {
           })
           .catch(error => {
             alert(error);
-          })
+          });
       }
     },
     img() {
-      if(this.img) {
+      if (this.img) {
         this.imgUploaded = false;
         this.imgUploading = true;
         this.imgMeta.name = this.img.name;
@@ -295,7 +295,7 @@ export default {
           })
           .catch(error => {
             alert(error);
-          })
+          });
       }
     },
     nlsb() {
@@ -317,7 +317,7 @@ export default {
         })
         .catch(error => {
           alert(error);
-        })
+        });
     },
     updateRequired() {
       var params = { 
@@ -334,7 +334,7 @@ export default {
         })
         .catch(error => {
           alert(error);
-        })
+        });
     },
     submit() {
       if(this.isFormValid) {
