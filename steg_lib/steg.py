@@ -165,14 +165,16 @@ def space_available(img: Img, **flags) -> int:
     free_bytes = ((free_indexes * n_lsb) // 8 ) - 72 
     return max(0, free_bytes)
   
-def space_required(num_fname_bytes: int, num_ext_bytes: int, num_data_bytes: int) -> int:
+def pixels_required(num_fname_bytes: int, num_ext_bytes: int, num_data_bytes: int, n_lsb: int) -> int:
     """
     Deduces the required number of pixels to encode a data file of size n_bytes
     in an encoding configuration of 1 LSB. Assuming password is always encoded.
     """
+    bitdepth = 8
+    channels = 3
     header_bytes = 24 # flags, n_lsb, length ext, length fname, length data, password salt.
-    bytes_required = num_fname_bytes + num_ext_bytes + num_data_bytes
-    pixels_required = ciel_div(bytes_required * 8, 3) # Each pixel fits 3 bits; 1/3 pixel per bit.
+    bytes_required = num_fname_bytes + num_ext_bytes + num_data_bytes + 72
+    pixels_required = ciel_div(bytes_required * (bitdepth), channels * n_lsb) # Each pixel fits 3 bits; 1/3 pixel per bit.
     return pixels_required
     
 def ciel_div(a: int, b: int) -> int:
