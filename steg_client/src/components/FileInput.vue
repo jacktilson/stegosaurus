@@ -81,9 +81,11 @@ export default {
       default: null
     }
   },
-  data() { return {
-    file: null
-  }},
+  data() {
+    return {
+      file: null
+    };
+  },
   computed: {
     isValid() {
       // check file is uploaded

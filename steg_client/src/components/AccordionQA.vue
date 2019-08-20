@@ -27,21 +27,21 @@ export default {
     visible: {
       type: Boolean,
       required: false,
-      default: false,
+      default: false
     }
   }
-}
+};
 </script>
 <style lang="scss">
-  .cursor-pointer{
-    cursor: pointer
-  }
-  svg {
-    transition: 256ms;
-    transform: rotate(0deg);
-  }
-  .collapsed > svg{
-    transition: 256ms;
-    transform: rotate(-90deg);
-  }
+.cursor-pointer {
+  cursor: pointer;
+}
+svg {
+  transition: 256ms;
+  transform: rotate(0deg);
+}
+.collapsed > svg {
+  transition: 256ms;
+  transform: rotate(-90deg);
+}
 </style>
