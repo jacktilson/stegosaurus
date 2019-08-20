@@ -130,7 +130,7 @@ def space_available_encode():
 ########################################################################################################
 
 @app.route('/encode/data/space', methods = ['GET'])
-def space_required_encode():
+def pixels_required_encode():
   
     """ NOTE: THIS ROUTE IS INCOMPLETE 
     Pending core team to create steg_lib space_required function to be called here."""
@@ -150,14 +150,24 @@ def space_required_encode():
     extension = request.args.get('extension', default=None)
     if extension is None: return reply_error_json('The file extension was not present in the request.')
     
+    # Obtain n_lsb
+    n_lsb = request.args.get('n_lsb', default=None)
+    if n_lsb is None: return reply_error_json('nlsb was not present in the request.')
+    
+    try: n_lsb = int(n_lsb)
+    except ValueError: return reply_error_json('nlsb must be a number')
+
+    if(n_lsb > 8 | n_lsb < 1):
+      return reply_error_json('nlsb must be between 1 and 8')
+
     # Perform analysis of how many pixels are ideal for the data file's target image.
     num_data_bytes = len(read_file_bytes(trans_id, 'data', 'data'))
     num_fname_bytes = len(filename.encode())
     num_ext_bytes = len(extension.encode())
-    space = space_required(num_fname_bytes, num_ext_bytes, num_data_bytes)
+    pixels = pixels_required(num_fname_bytes, num_ext_bytes, num_data_bytes, n_lsb)
     
     # Hand back a JSON on success.
-    return jsonify({"space_required": space})
+    return jsonify({"pixels_required": pixels})
     
 #####################################
 # Encoding User Flow Complete Route #
