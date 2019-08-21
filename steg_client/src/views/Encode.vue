@@ -361,6 +361,7 @@ export default {
             this.showForm = false;
             this.showLoading = false;
             this.showResult = true;
+            this.delete();
           })
           .catch(error => {
             this.showForm = true;
@@ -369,6 +370,13 @@ export default {
             alert(error);
           })
       }
+    },
+    delete() {
+      axios
+        .get("/encode/delete", {trans_id: this.trans_id})
+        .catch(error => {
+          alert(error);
+        })
     },
     downloadResult() {
       axios
