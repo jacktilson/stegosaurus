@@ -92,7 +92,15 @@ def store_file_temp(trans_id, file, temp_sub_dir, file_suffix):
     ext = f'.{disect_name[len(disect_name)-1]}' # Ext will always be text after final dot.
     # Form absolute path for file to save at.
     file_path = os.path.join(file_dir, f'{trans_id}_{file_suffix}{ext}')
-    # Perform the save of file.
+    
+    # Check if a file already exists in this temp dir for this transaction.
+    os.chdir(file_dir) # Enter the temp dir concerned.
+    trans_file_matches = glob.glob(f'{trans_id}*') # Find all files relating to transaction.
+    if len(trans_file_matches) > 0:
+      for trans_file in trans_file_matches:
+        os.remove(trans_file) # If match(es) found, delete them all.
+    
+    # Perform the save of file now temp dir is clean.
     file.save(file_path)
     return file_path
  
