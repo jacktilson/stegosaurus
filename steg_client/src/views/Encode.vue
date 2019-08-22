@@ -373,7 +373,10 @@ export default {
     },
     delete() {
       axios
-        .get("/encode/delete", {trans_id: this.trans_id})
+        .get("/encode/delete", {
+        params: {
+            trans_id: this.trans_id
+        }})
         .catch(error => {
           alert(error);
         })
