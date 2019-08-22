@@ -361,7 +361,6 @@ export default {
             this.showForm = false;
             this.showLoading = false;
             this.showResult = true;
-            this.delete();
           })
           .catch(error => {
             this.showForm = true;
@@ -394,6 +393,7 @@ export default {
             response.headers["content-disposition"]
           ).groups.filename;
           saveAs(new Blob([response.data]), filename);
+          this.delete();
         })
         .catch(error => {
           alert(error);
