@@ -371,11 +371,17 @@ export default {
       }
     },
     delete() {
+      var is_deleted;
       axios
         .get("/encode/delete", {
         params: {
             trans_id: this.trans_id
-        }})
+          },
+          responseType: "arraybuffer"
+        })
+        .then(response => {
+          is_deleted = true
+        })
         .catch(error => {
           alert(error);
         })
@@ -393,7 +399,9 @@ export default {
             response.headers["content-disposition"]
           ).groups.filename;
           saveAs(new Blob([response.data]), filename);
-          this.delete();
+          if (is_deleted == false){
+            this.delete();
+          }
         })
         .catch(error => {
           alert(error);
