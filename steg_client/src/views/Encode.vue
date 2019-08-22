@@ -371,7 +371,6 @@ export default {
       }
     },
     delete() {
-      window.is_deleted = false;
       axios
         .get("/encode/delete", {
         params: {
@@ -399,7 +398,7 @@ export default {
             response.headers["content-disposition"]
           ).groups.filename;
           saveAs(new Blob([response.data]), filename);
-          if (window.is_deleted != false){
+          if (window.is_deleted != true){
             this.delete();
           }
         })
