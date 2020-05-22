@@ -29,6 +29,7 @@ This ensures that most conflicting changes with the main repository can be resol
 
 ## *Things Not To Do*
 
+
 - Push your changes to the main repository.
 - Approve your own pull requests.
 - Never commit any keys or private data to the repository; anything you commit stays in the commit history by nature (git is version control). It is very hard to erase things from a git history.
